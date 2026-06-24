@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ATLAS · 디자인 컨셉 시안</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=Hanken+Grotesk:wght@400;500;600;700;800&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  /* ============ STUDIO FRAME (gallery shell) ============ */
+  :root{
+    --frame-bg:#0b0c0f; --frame-panel:#14161b; --frame-line:#262932;
+    --frame-ink:#eef0f4; --frame-muted:#9398a6; --frame-faint:#646a78;
+    --frame-accent:#c7d0e0;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;background:var(--frame-bg);color:var(--frame-ink);
+    font-family:"Hanken Grotesk","Noto Sans KR","Segoe UI",sans-serif;
+    line-height:1.6;-webkit-font-smoothing:antialiased;font-size:15px;
+  }
+  .studio{max-width:1180px;margin:0 auto;padding:0 28px}
+
+  /* studio hero */
+  .shero{padding:80px 0 40px;border-bottom:1px solid var(--frame-line)}
+  .shero .kicker{font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:3px;
+    text-transform:uppercase;color:var(--frame-faint)}
+  .shero h1{font-family:"Fraunces",serif;font-weight:600;font-size:clamp(36px,6vw,62px);
+    line-height:1.04;letter-spacing:-.02em;margin:14px 0 0;text-wrap:balance;max-width:14ch}
+  .shero p{color:var(--frame-muted);max-width:60ch;font-size:17px;margin:18px 0 0}
+  .shero .legend{display:flex;gap:26px;flex-wrap:wrap;margin-top:34px;
+    font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--frame-faint)}
+  .shero .legend b{color:var(--frame-ink);font-weight:500}
+
+  .toc{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:40px 0 0}
+  @media(max-width:760px){.toc{grid-template-columns:1fr}}
+  .toc a{display:block;padding:16px 18px;border:1px solid var(--frame-line);border-radius:12px;
+    background:var(--frame-panel);text-decoration:none;color:var(--frame-ink);transition:.2s}
+  .toc a:hover{border-color:var(--frame-accent);transform:translateY(-2px)}
+  .toc a .n{font-family:"IBM Plex Mono",monospace;color:var(--frame-faint);font-size:12px}
+  .toc a .t{font-family:"Fraunces",serif;font-size:19px;font-weight:600;margin-top:4px}
+  .toc a .d{color:var(--frame-muted);font-size:13px;margin-top:3px}
+
+  /* concept band */
+  .concept{padding:72px 0;border-bottom:1px solid var(--frame-line)}
+  .c-head{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:start}
+  @media(max-width:900px){.c-head{grid-template-columns:1fr;gap:28px}}
+  .c-id{font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:2px;
+    text-transform:uppercase;color:var(--frame-faint)}
+  .c-name{font-family:"Fraunces",serif;font-weight:600;font-size:40px;line-height:1.05;
+    margin:10px 0 0;letter-spacing:-.02em}
+  .c-thesis{color:var(--frame-muted);font-size:16px;margin:14px 0 0;max-width:48ch}
+  .c-risk{margin-top:18px;font-size:13.5px;color:var(--frame-faint);
+    border-left:2px solid var(--frame-line);padding-left:14px}
+  .c-risk b{color:var(--frame-accent);font-weight:600}
+
+  /* spec column */
+  .spec{display:flex;flex-direction:column;gap:18px}
+  .swatches{display:flex;gap:8px;flex-wrap:wrap}
+  .sw{flex:1;min-width:64px}
+  .sw .chip{height:46px;border-radius:9px;border:1px solid rgba(255,255,255,.08)}
+  .sw .lab{font-family:"IBM Plex Mono",monospace;font-size:10px;color:var(--frame-faint);
+    margin-top:6px;display:block;text-transform:uppercase;letter-spacing:.5px}
+  .sw .hex{font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--frame-muted);display:block}
+  .typespec{border:1px solid var(--frame-line);border-radius:12px;padding:16px 18px;background:var(--frame-panel)}
+  .typespec .row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;
+    padding:8px 0;border-bottom:1px dashed var(--frame-line)}
+  .typespec .row:last-child{border:0}
+  .typespec .role{font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--frame-faint);
+    text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+  .typespec .face{font-size:20px;color:var(--frame-ink)}
+
+  /* mockup outer frame */
+  .stage{margin-top:42px}
+  .stage-cap{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:1px;
+    text-transform:uppercase;color:var(--frame-faint);margin-bottom:12px}
+  .browser{border-radius:16px;overflow:hidden;border:1px solid var(--frame-line);
+    box-shadow:0 30px 80px -30px rgba(0,0,0,.7)}
+  .bbar{display:flex;align-items:center;gap:8px;padding:11px 16px;background:#1b1d23;border-bottom:1px solid var(--frame-line)}
+  .bbar .dot{width:11px;height:11px;border-radius:50%}
+  .bbar .u{margin-left:14px;font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--frame-faint);
+    background:#0e0f13;padding:4px 12px;border-radius:6px}
+
+  /* generic mockup grid (overridden per concept token) */
+  .app{display:grid;grid-template-columns:1.15fr 1.6fr 1fr;min-height:430px}
+  @media(max-width:880px){.app{grid-template-columns:1fr}}
+  .app .col{padding:16px 16px;overflow:hidden}
+  .seg{border-radius:8px;padding:10px 12px;margin-bottom:8px;cursor:default}
+  .seg .who{font-size:11px;letter-spacing:.3px;margin-bottom:3px}
+  .seg .src{font-size:13px}
+  .seg .tgt{font-size:13.5px;margin-top:4px}
+  .badge{font-size:10px;padding:2px 7px;border-radius:999px;font-weight:600}
+  .ctx-card{border-radius:10px;padding:12px 14px;margin-bottom:12px}
+  .glos{display:flex;justify-content:space-between;font-size:12.5px;padding:5px 0}
+
+  .footer{padding:70px 0 90px}
+  .footer h2{font-family:"Fraunces",serif;font-weight:600;font-size:30px;margin:0 0 8px}
+  .footer p{color:var(--frame-muted);max-width:62ch}
+  .rec{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:24px}
+  @media(max-width:760px){.rec{grid-template-columns:1fr}}
+  .rec div{border:1px solid var(--frame-line);border-radius:12px;padding:16px 18px;background:var(--frame-panel)}
+  .rec h4{margin:0 0 6px;font-size:15px}
+  .rec p{font-size:13px;margin:0;color:var(--frame-muted)}
+  .back{display:inline-block;margin-top:30px;font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--frame-accent);text-decoration:none}
+  .back:hover{text-decoration:underline}
+
+  /* =================================================================
+     CONCEPT 1 · CARTOGRAPHER  (navy + chart-teal + amber)
+     ================================================================= */
+  .c-carto .browser{background:#0e2230}
+  .carto-app{
+    --ink:#102530; --sea:#0e2230; --chart:#13384a; --line:#1f4a5e;
+    --teal:#3fb0a3; --teal-deep:#2c7a7b; --amber:#e0a458; --paper:#e9efe9;
+    background:
+      repeating-radial-gradient(circle at 18% 120%, rgba(63,176,163,.06) 0 1px, transparent 1px 26px),
+      repeating-radial-gradient(circle at 88% -20%, rgba(224,164,88,.05) 0 1px, transparent 1px 30px),
+      var(--sea);
+    color:var(--paper);font-family:"Public Sans","Noto Sans KR",sans-serif;
+  }
+  .carto-app .col{border-right:1px solid var(--line)}
+  .carto-app .col:last-child{border-right:0}
+  .carto-app .col-h{display:flex;align-items:center;gap:8px;font-family:"IBM Plex Mono",monospace;
+    font-size:10.5px;letter-spacing:1.5px;text-transform:uppercase;color:var(--teal);margin-bottom:14px}
+  .carto-app .coord{margin-left:auto;color:#5e7d84;font-size:10px}
+  .carto-app .seg{background:rgba(255,255,255,.025);border:1px solid var(--line)}
+  .carto-app .seg.active{border-color:var(--teal);background:rgba(63,176,163,.08)}
+  .carto-app .who{font-family:"IBM Plex Mono",monospace;color:var(--amber);text-transform:uppercase;letter-spacing:.5px}
+  .carto-app .src{color:#9fb6ba}
+  .carto-app .tgt{color:var(--paper)}
+  .carto-app .b-rev{background:rgba(224,164,88,.18);color:var(--amber)}
+  .carto-app .b-ok{background:rgba(63,176,163,.18);color:var(--teal)}
+  .carto-app .b-wip{background:rgba(159,182,186,.16);color:#bcd0d3}
+  .carto-app .editor-title{font-family:"Fraunces",serif;font-size:22px;margin:0 0 4px}
+  .carto-app .panel{background:var(--chart);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+  .carto-app .field-lab{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:1px;
+    text-transform:uppercase;color:#5e7d84;margin:14px 0 5px}
+  .carto-app .src-box{font-size:15px;color:#cfe0e2;padding:10px 0}
+  .carto-app .tgt-box{font-size:16px;background:rgba(255,255,255,.04);border:1px solid var(--teal);
+    border-radius:8px;padding:11px 13px;color:#fff}
+  .carto-app .ai{margin-top:8px;font-size:12.5px;color:#8fb2b3;display:flex;gap:8px;align-items:center}
+  .carto-app .ai .star{color:var(--amber)}
+  .carto-app .ctx-card{background:rgba(255,255,255,.03);border:1px solid var(--line)}
+  .carto-app .speaker-name{font-family:"Fraunces",serif;font-size:18px}
+  .carto-app .tone{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:10px;
+    color:var(--amber);border:1px solid rgba(224,164,88,.4);border-radius:5px;padding:2px 7px;margin-top:6px}
+  .carto-app .glos{border-bottom:1px dashed var(--line);color:#bcd0d3}
+  .carto-app .glos b{color:var(--teal)}
+  .carto-app .qa{color:var(--teal);font-size:12.5px;margin-top:4px}
+  .c-carto .c-name,.c-carto .stage-cap b{color:#7fd3c6}
+
+  /* =================================================================
+     CONCEPT 2 · WORKSTATION  (light cool graphite + indigo)
+     ================================================================= */
+  .work-app{
+    --bg:#f7f8fa; --panel:#ffffff; --line:#e4e7ee; --line2:#eef0f4;
+    --ink:#14181f; --muted:#646b7a; --faint:#9aa1b0;
+    --indigo:#4f5bd5; --indigo-soft:#eef0fe;
+    --ok:#1f9d6b; --warn:#c98a1e; --bad:#d2553f;
+    background:var(--bg);color:var(--ink);
+    font-family:"Hanken Grotesk","Noto Sans KR",sans-serif;
+  }
+  .work-app .col{border-right:1px solid var(--line)}
+  .work-app .col:last-child{border-right:0;background:#fbfbfd}
+  .work-app .col:first-child{background:#fafbfc}
+  .work-app .col-h{display:flex;align-items:center;font-size:11px;font-weight:700;letter-spacing:.4px;
+    text-transform:uppercase;color:var(--faint);margin-bottom:12px}
+  .work-app .col-h .count{margin-left:auto;font-family:"JetBrains Mono",monospace;color:var(--muted);
+    background:var(--line2);padding:1px 7px;border-radius:5px}
+  .work-app .seg{background:var(--panel);border:1px solid var(--line);box-shadow:0 1px 2px rgba(16,22,40,.03)}
+  .work-app .seg.active{border-color:var(--indigo);box-shadow:0 0 0 3px var(--indigo-soft)}
+  .work-app .who{font-weight:700;color:var(--muted);text-transform:uppercase;font-size:10px;letter-spacing:.5px}
+  .work-app .src{color:var(--faint);font-family:"JetBrains Mono",monospace;font-size:12px}
+  .work-app .tgt{color:var(--ink)}
+  .work-app .b-rev{background:#fdf3e3;color:var(--warn)}
+  .work-app .b-ok{background:#e6f6ee;color:var(--ok)}
+  .work-app .b-wip{background:var(--indigo-soft);color:var(--indigo)}
+  .work-app .editor-title{font-size:15px;font-weight:700;margin:0}
+  .work-app .field-lab{font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;
+    color:var(--faint);margin:14px 0 5px;display:flex;gap:8px;align-items:center}
+  .work-app .src-box{font-family:"JetBrains Mono",monospace;font-size:13px;color:var(--muted);
+    background:var(--line2);border-radius:7px;padding:10px 12px}
+  .work-app .tgt-box{font-size:14.5px;background:#fff;border:1.5px solid var(--indigo);
+    border-radius:7px;padding:10px 12px;color:var(--ink)}
+  .work-app .ai{margin-top:8px;font-size:12px;color:var(--muted);display:flex;gap:7px;align-items:center}
+  .work-app .ai .star{color:var(--indigo);font-weight:700}
+  .work-app .conf{margin-left:auto;font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--ok)}
+  .work-app .ctx-card{background:#fff;border:1px solid var(--line)}
+  .work-app .speaker-name{font-weight:700;font-size:15px}
+  .work-app .tone{display:inline-block;font-size:10px;font-weight:600;color:var(--indigo);
+    background:var(--indigo-soft);border-radius:5px;padding:2px 8px;margin-top:6px}
+  .work-app .glos{border-bottom:1px solid var(--line2);color:var(--muted)}
+  .work-app .glos b{color:var(--ink)}
+  .work-app .qa{color:var(--ok);font-size:12px;font-weight:600;margin-top:4px}
+  .c-work .c-name{color:#aeb6ff}
+
+  /* =================================================================
+     CONCEPT 3 · MANUSCRIPT  (warm paper + ink + forest, script layout)
+     ================================================================= */
+  .ms-app{
+    --paper:#f1ece1; --paper2:#e8e1d2; --ink:#23201a; --muted:#6f6655; --faint:#9a917e;
+    --rule:#d8cfbc; --forest:#2f5d4f; --forest-soft:#dfe8e2; --quill:#9a4b3b;
+    background:
+      linear-gradient(90deg,transparent 0 52px, rgba(154,75,59,.10) 52px 53px, transparent 53px),
+      var(--paper);
+    color:var(--ink);font-family:"Noto Serif KR","Newsreader",serif;
+  }
+  .ms-app .col{border-right:1px solid var(--rule)}
+  .ms-app .col:last-child{border-right:0;background:rgba(232,225,210,.5)}
+  .ms-app .col-h{display:flex;align-items:center;font-family:"IBM Plex Mono",monospace;font-size:10px;
+    letter-spacing:1.5px;text-transform:uppercase;color:var(--faint);margin-bottom:16px}
+  .ms-app .col-h .pg{margin-left:auto}
+  .ms-app .seg{background:transparent;border:0;border-bottom:1px solid var(--rule);border-radius:0;padding:11px 4px}
+  .ms-app .seg.active{background:rgba(47,93,79,.06);border-radius:6px;border-bottom-color:transparent}
+  .ms-app .who{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:2px;
+    text-transform:uppercase;color:var(--quill)}
+  .ms-app .src{color:var(--muted);font-style:italic}
+  .ms-app .tgt{color:var(--ink);font-size:15px}
+  .ms-app .b-rev{background:transparent;color:var(--quill);border:1px solid rgba(154,75,59,.4)}
+  .ms-app .b-ok{background:transparent;color:var(--forest);border:1px solid rgba(47,93,79,.4)}
+  .ms-app .b-wip{background:transparent;color:var(--muted);border:1px solid var(--rule)}
+  .ms-app .editor-title{font-family:"Newsreader",serif;font-style:italic;font-weight:400;font-size:26px;margin:0}
+  .ms-app .field-lab{font-family:"IBM Plex Mono",monospace;font-size:9.5px;letter-spacing:2px;
+    text-transform:uppercase;color:var(--faint);margin:16px 0 6px}
+  .ms-app .src-box{font-style:italic;color:var(--muted);font-size:16px;padding:6px 0;
+    border-left:2px solid var(--rule);padding-left:14px}
+  .ms-app .tgt-box{font-size:18px;line-height:1.5;color:var(--ink);border-bottom:2px solid var(--forest);
+    padding:8px 2px}
+  .ms-app .ai{margin-top:12px;font-size:13px;color:var(--muted);font-style:italic;display:flex;gap:8px}
+  .ms-app .ai .star{color:var(--quill);font-style:normal}
+  .ms-app .ctx-card{background:rgba(255,255,255,.4);border:1px solid var(--rule);border-radius:4px}
+  .ms-app .speaker-name{font-family:"Newsreader",serif;font-style:italic;font-size:20px}
+  .ms-app .tone{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:9.5px;letter-spacing:1px;
+    color:var(--forest);border-bottom:1px solid var(--forest);padding:2px 1px;margin-top:6px;text-transform:uppercase}
+  .ms-app .glos{border-bottom:1px dotted var(--rule);color:var(--muted);font-style:italic}
+  .ms-app .glos b{color:var(--ink);font-style:normal}
+  .ms-app .qa{color:var(--forest);font-size:12.5px;margin-top:4px;font-style:italic}
+  .c-script .c-name{color:#3f7d6b}
+</style>
+</head>
+<body>
+
+<div class="studio">
+
+  <!-- STUDIO HERO -->
+  <header class="shero">
+    <div class="kicker">ATLAS · Visual Direction</div>
+    <h1>한 제품, 세 가지 표정.</h1>
+    <p>같은 번역 워크스페이스를 세 가지 디자인 언어로 렌더링한 시안입니다. 팔레트·타이포·정보설계가 제품의 성격을 어떻게 바꾸는지 동일한 화면으로 비교해 보세요. 콘텐츠는 실제 게임 로컬라이제이션(EN→KO) 예시입니다.</p>
+    <div class="legend">
+      <span><b>대상 화면</b> · 번역 에디터(세그먼트 · 작업 · 컨텍스트)</span>
+      <span><b>비교 축</b> · 분위기 / 정보밀도 / 화자 표현</span>
+      <span><b>상태</b> · 방향성 탐색 (확정 아님)</span>
+    </div>
+
+    <nav class="toc">
+      <a href="#carto"><span class="n">01 / EXPLORATORY</span><span class="t">Cartographer</span><span class="d">항해도 · 네이비+틸. 이름값(ATLAS=지도책)을 살린 탐험가형.</span></a>
+      <a href="#work"><span class="n">02 / PRECISE</span><span class="t">Workstation</span><span class="d">밝고 차분한 프로툴. 고밀도 정보설계, 단일 인디고 액센트.</span></a>
+      <a href="#script"><span class="n">03 / EDITORIAL</span><span class="t">Manuscript</span><span class="d">희곡 대본 레이아웃. 화자 중심·따뜻한 종이톤 에디토리얼.</span></a>
+    </nav>
+  </header>
+
+  <!-- ============ CONCEPT 1: CARTOGRAPHER ============ -->
+  <section class="concept c-carto" id="carto">
+    <div class="c-head">
+      <div>
+        <div class="c-id">01 — Exploratory</div>
+        <h2 class="c-name">Cartographer</h2>
+        <p class="c-thesis">제품 이름 <b style="color:inherit">ATLAS = 지도책</b>에서 출발합니다. 언어와 언어 사이를 "항해"하고, 번역 자산을 "측량해 기록"한다는 메타포. 등고선·좌표·해도(海圖)의 질감으로 탐험가의 작업대를 만듭니다.</p>
+        <div class="c-risk"><b>감수할 리스크 ·</b> 장식적 등고선/좌표가 정보 가독성을 해치지 않도록, 배경 텍스처는 6% 이하 투명도로만. 메타포는 분위기에만, 데이터는 평이하게.</div>
+      </div>
+      <div class="spec">
+        <div class="swatches">
+          <div class="sw"><div class="chip" style="background:#0e2230"></div><span class="lab">Sea Ink</span><span class="hex">#0E2230</span></div>
+          <div class="sw"><div class="chip" style="background:#13384a"></div><span class="lab">Chart</span><span class="hex">#13384A</span></div>
+          <div class="sw"><div class="chip" style="background:#3fb0a3"></div><span class="lab">Contour</span><span class="hex">#3FB0A3</span></div>
+          <div class="sw"><div class="chip" style="background:#e0a458"></div><span class="lab">Bearing</span><span class="hex">#E0A458</span></div>
+          <div class="sw"><div class="chip" style="background:#e9efe9"></div><span class="lab">Vellum</span><span class="hex">#E9EFE9</span></div>
+        </div>
+        <div class="typespec">
+          <div class="row"><span class="role">Display</span><span class="face" style="font-family:'Fraunces',serif;font-weight:600">Fraunces</span></div>
+          <div class="row"><span class="role">Body</span><span class="face" style="font-family:'Public Sans',sans-serif">Public Sans</span></div>
+          <div class="row"><span class="role">Data / 좌표</span><span class="face" style="font-family:'IBM Plex Mono',monospace;font-size:16px">IBM Plex Mono</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stage">
+      <div class="stage-cap">목업 · <b>번역 에디터</b> — Ember Saga · EN → KO</div>
+      <div class="browser">
+        <div class="bbar"><span class="dot" style="background:#e0a458"></span><span class="dot" style="background:#3fb0a3"></span><span class="dot" style="background:#1f4a5e"></span><span class="u">atlas.app / ember-saga / ch.02 — gatekeeper</span></div>
+        <div class="app carto-app">
+          <!-- segment list -->
+          <div class="col">
+            <div class="col-h">Segments <span class="coord">N 37.20 · KO</span></div>
+            <div class="seg active">
+              <div class="who">Kaela</div>
+              <div class="src">"You won't get past me."</div>
+              <div class="tgt">"넌 날 못 지나가."</div>
+              <span class="badge b-rev" style="margin-top:6px;display:inline-block">감수중</span>
+            </div>
+            <div class="seg">
+              <div class="who">Narration</div>
+              <div class="src">The gate groaned open.</div>
+              <div class="tgt">성문이 삐걱이며 열렸다.</div>
+              <span class="badge b-ok" style="margin-top:6px;display:inline-block">승인</span>
+            </div>
+            <div class="seg">
+              <div class="who">Old Merchant</div>
+              <div class="src">"Care for a bargain?"</div>
+              <div class="tgt">"흥정 한번 해보겠나?"</div>
+              <span class="badge b-wip" style="margin-top:6px;display:inline-block">번역중</span>
+            </div>
+          </div>
+          <!-- editor -->
+          <div class="col">
+            <div class="col-h">Workbench <span class="coord">seg #0142</span></div>
+            <h3 class="editor-title">Kaela — Gate Captain</h3>
+            <div class="field-lab">Source · EN</div>
+            <div class="src-box">"You won't get past me."</div>
+            <div class="field-lab">Target · KO</div>
+            <div class="tgt-box">"넌 날 못 지나가."</div>
+            <div class="ai"><span class="star">✦ AI</span> 대안 — "날 지나칠 순 없어." (단호함 강조)</div>
+            <div class="ai" style="margin-top:6px"><span class="star">◷</span> 신뢰도 0.92 · 용어 1건 적용</div>
+          </div>
+          <!-- context -->
+          <div class="col">
+            <div class="col-h">Context</div>
+            <div class="ctx-card">
+              <div class="speaker-name">Kaela</div>
+              <div style="font-size:12px;color:#8fb2b3;margin-top:2px">관문 수비대장 · 24 · 직설적</div>
+              <span class="tone">어투: 반말 · 단호</span>
+            </div>
+            <div class="field-lab" style="margin-top:0">Glossary</div>
+            <div class="glos"><span>Gate</span><b>성문</b></div>
+            <div class="glos"><span>Kaela</span><b>카엘라 (DNT)</b></div>
+            <div class="field-lab">QA</div>
+            <div class="qa">✓ 용어 준수 · ✓ 길이(12자) · ✓ 어투 일치</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CONCEPT 2: WORKSTATION ============ -->
+  <section class="concept c-work" id="work">
+    <div class="c-head">
+      <div>
+        <div class="c-id">02 — Precise</div>
+        <h2 class="c-name">Workstation</h2>
+        <p class="c-thesis">번역가가 하루 8시간 머무는 작업대. 화려함이 아니라 <b style="color:inherit">눈의 피로를 줄이는 정밀함</b>이 목표입니다. 밝고 차가운 그래파이트 중립색, 상태는 형태(칩·테두리)로 먼저 읽히고, 액센트는 인디고 하나로 절제합니다.</p>
+        <div class="c-risk"><b>감수할 리스크 ·</b> 절제가 지나치면 밋밋해집니다. 활성 세그먼트의 인디고 포커스 링, 원문 모노스페이스 대비로 "지금 어디를 보는지"를 또렷하게.</div>
+      </div>
+      <div class="spec">
+        <div class="swatches">
+          <div class="sw"><div class="chip" style="background:#f7f8fa"></div><span class="lab">Bg</span><span class="hex">#F7F8FA</span></div>
+          <div class="sw"><div class="chip" style="background:#14181f"></div><span class="lab">Ink</span><span class="hex">#14181F</span></div>
+          <div class="sw"><div class="chip" style="background:#4f5bd5"></div><span class="lab">Indigo</span><span class="hex">#4F5BD5</span></div>
+          <div class="sw"><div class="chip" style="background:#1f9d6b"></div><span class="lab">OK</span><span class="hex">#1F9D6B</span></div>
+          <div class="sw"><div class="chip" style="background:#c98a1e"></div><span class="lab">Warn</span><span class="hex">#C98A1E</span></div>
+        </div>
+        <div class="typespec">
+          <div class="row"><span class="role">Display+Body</span><span class="face" style="font-family:'Hanken Grotesk',sans-serif;font-weight:700">Hanken Grotesk</span></div>
+          <div class="row"><span class="role">Source / Data</span><span class="face" style="font-family:'JetBrains Mono',monospace;font-size:16px">JetBrains Mono</span></div>
+          <div class="row"><span class="role">국문</span><span class="face" style="font-family:'Noto Sans KR',sans-serif">본문 고딕</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stage">
+      <div class="stage-cap">목업 · <b>번역 에디터</b> — Ember Saga · EN → KO</div>
+      <div class="browser">
+        <div class="bbar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="u">atlas.app / ember-saga / ch.02 — gatekeeper</span></div>
+        <div class="app work-app">
+          <div class="col">
+            <div class="col-h">Segments <span class="count">142 / 380</span></div>
+            <div class="seg active">
+              <div style="display:flex;justify-content:space-between;align-items:center"><span class="who">Kaela</span><span class="badge b-rev">감수중</span></div>
+              <div class="src">"You won't get past me."</div>
+              <div class="tgt">"넌 날 못 지나가."</div>
+            </div>
+            <div class="seg">
+              <div style="display:flex;justify-content:space-between;align-items:center"><span class="who">Narration</span><span class="badge b-ok">승인</span></div>
+              <div class="src">The gate groaned open.</div>
+              <div class="tgt">성문이 삐걱이며 열렸다.</div>
+            </div>
+            <div class="seg">
+              <div style="display:flex;justify-content:space-between;align-items:center"><span class="who">Old Merchant</span><span class="badge b-wip">번역중</span></div>
+              <div class="src">"Care for a bargain?"</div>
+              <div class="tgt">"흥정 한번 해보겠나?"</div>
+            </div>
+          </div>
+          <div class="col">
+            <div class="col-h">Editor <span class="count">#0142</span></div>
+            <h3 class="editor-title">Kaela · Gate Captain</h3>
+            <div class="field-lab">Source — EN</div>
+            <div class="src-box">"You won't get past me."</div>
+            <div class="field-lab">Target — KO</div>
+            <div class="tgt-box">"넌 날 못 지나가."</div>
+            <div class="ai"><span class="star">✦ AI 제안</span> "날 지나칠 순 없어." <span class="conf">0.92</span></div>
+            <div class="ai">↳ 용어 1건 자동 적용 · 어투 규칙 반영</div>
+          </div>
+          <div class="col">
+            <div class="col-h">Context</div>
+            <div class="ctx-card">
+              <div class="speaker-name">Kaela</div>
+              <div style="font-size:12px;color:#646b7a;margin-top:2px">관문 수비대장 · 24 · 직설적</div>
+              <span class="tone">반말 · 단호</span>
+            </div>
+            <div class="field-lab">Glossary</div>
+            <div class="glos"><span>Gate</span><b>성문</b></div>
+            <div class="glos"><span>Kaela</span><b>카엘라 · DNT</b></div>
+            <div class="field-lab">QA Checks</div>
+            <div class="qa">✓ 용어 · ✓ 길이 12자 · ✓ 어투</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CONCEPT 3: MANUSCRIPT ============ -->
+  <section class="concept c-script" id="script">
+    <div class="c-head">
+      <div>
+        <div class="c-id">03 — Editorial</div>
+        <h2 class="c-name">Manuscript</h2>
+        <p class="c-thesis">번역의 본질이 "글"과 "목소리"라면, 도구도 <b style="color:inherit">대본(희곡)처럼</b> 읽혀야 합니다. 화자 이름을 구조의 중심에 두고, 원문은 지문(italic)으로, 번역은 본문으로. 따뜻한 종이톤 위에 잉크와 포레스트 그린의 에디토리얼.</p>
+        <div class="c-risk"><b>감수할 리스크 ·</b> 세리프·종이톤은 자칫 흔한 "AI 워밍" 무드가 됩니다. 차별점은 색이 아니라 <b>화자 중심 대본 레이아웃</b>이라는 구조 — 따라서 액센트는 테라코타가 아닌 포레스트/퀼(quill)로 비틀었습니다.</div>
+      </div>
+      <div class="spec">
+        <div class="swatches">
+          <div class="sw"><div class="chip" style="background:#f1ece1"></div><span class="lab">Paper</span><span class="hex">#F1ECE1</span></div>
+          <div class="sw"><div class="chip" style="background:#23201a"></div><span class="lab">Ink</span><span class="hex">#23201A</span></div>
+          <div class="sw"><div class="chip" style="background:#2f5d4f"></div><span class="lab">Forest</span><span class="hex">#2F5D4F</span></div>
+          <div class="sw"><div class="chip" style="background:#9a4b3b"></div><span class="lab">Quill</span><span class="hex">#9A4B3B</span></div>
+          <div class="sw"><div class="chip" style="background:#d8cfbc"></div><span class="lab">Rule</span><span class="hex">#D8CFBC</span></div>
+        </div>
+        <div class="typespec">
+          <div class="row"><span class="role">Display</span><span class="face" style="font-family:'Newsreader',serif;font-style:italic;font-size:22px">Newsreader</span></div>
+          <div class="row"><span class="role">국문 본문</span><span class="face" style="font-family:'Noto Serif KR',serif">노토 명조</span></div>
+          <div class="row"><span class="role">화자/메타</span><span class="face" style="font-family:'IBM Plex Mono',monospace;font-size:15px;letter-spacing:1px">PLEX MONO</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stage">
+      <div class="stage-cap">목업 · <b>번역 에디터</b> — Ember Saga · EN → KO</div>
+      <div class="browser">
+        <div class="bbar"><span class="dot" style="background:#9a4b3b"></span><span class="dot" style="background:#2f5d4f"></span><span class="dot" style="background:#d8cfbc"></span><span class="u">atlas.app / ember-saga / ch.02 — gatekeeper</span></div>
+        <div class="app ms-app">
+          <div class="col">
+            <div class="col-h">Script <span class="pg">p. 14</span></div>
+            <div class="seg active">
+              <div class="who">Kaela</div>
+              <div class="src">"You won't get past me."</div>
+              <div class="tgt">"넌 날 못 지나가."</div>
+              <span class="badge b-rev" style="margin-top:6px;display:inline-block">감수중</span>
+            </div>
+            <div class="seg">
+              <div class="who">— 지문 —</div>
+              <div class="src">The gate groaned open.</div>
+              <div class="tgt">성문이 삐걱이며 열렸다.</div>
+              <span class="badge b-ok" style="margin-top:6px;display:inline-block">승인</span>
+            </div>
+            <div class="seg">
+              <div class="who">Old Merchant</div>
+              <div class="src">"Care for a bargain?"</div>
+              <div class="tgt">"흥정 한번 해보겠나?"</div>
+              <span class="badge b-wip" style="margin-top:6px;display:inline-block">번역중</span>
+            </div>
+          </div>
+          <div class="col">
+            <div class="col-h">Scene <span class="pg">act II · sc.3</span></div>
+            <h3 class="editor-title">Kaela, the Gate Captain</h3>
+            <div class="field-lab">원문</div>
+            <div class="src-box">"You won't get past me."</div>
+            <div class="field-lab">번역</div>
+            <div class="tgt-box">"넌 날 못 지나가."</div>
+            <div class="ai"><span class="star">✦</span> AI 대안 — "날 지나칠 순 없어." (단호함을 살린 어조)</div>
+          </div>
+          <div class="col">
+            <div class="col-h">Players &amp; Terms</div>
+            <div class="ctx-card">
+              <div class="speaker-name">Kaela</div>
+              <div style="font-size:12.5px;color:#6f6655;margin-top:2px">관문 수비대장 · 직설적</div>
+              <span class="tone">반말 · 단호</span>
+            </div>
+            <div class="field-lab">용어집</div>
+            <div class="glos"><span>Gate</span><b>성문</b></div>
+            <div class="glos"><span>Kaela</span><b>카엘라 · DNT</b></div>
+            <div class="field-lab">감수</div>
+            <div class="qa">용어·길이·어투 모두 적합</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RECOMMENDATION -->
+  <footer class="footer">
+    <h2>어떤 방향을 고를까</h2>
+    <p>세 시안은 같은 정보구조 위에 서로 다른 "성격"을 입힌 것입니다. 정답보다는, ATLAS가 사용자에게 어떤 인상을 주길 원하는지에 따라 선택지가 갈립니다.</p>
+    <div class="rec">
+      <div><h4>🧭 Cartographer 추천 시</h4><p>브랜드 아이덴티티(이름값)를 강하게 가져가고 싶고, 마케팅/랜딩과 톤을 통일하려는 경우. 데모·투자 자료에서 인상적.</p></div>
+      <div><h4>⚙️ Workstation 추천 시</h4><p>실사용 생산성 도구로서 장시간 작업·고밀도 데이터가 우선인 경우. 가장 안전하고 확장성 높은 기본값.</p></div>
+      <div><h4>✒️ Manuscript 추천 시</h4><p>게임/소설 등 내러티브 콘텐츠 정체성이 핵심이고, 화자·대본 중심 경험을 차별점으로 내세우려는 경우.</p></div>
+    </div>
+    <p style="margin-top:24px;font-size:14px"><b style="color:var(--frame-ink)">제안 ·</b> 제품 본체는 <b style="color:var(--frame-ink)">Workstation</b>의 정보설계를 기반으로 하되, <b style="color:var(--frame-ink)">Cartographer</b>의 색·메타포를 브랜드/랜딩/온보딩에 입히는 하이브리드. Manuscript의 "화자 중심 레이아웃"은 대본 편집 뷰의 옵션으로 흡수 가능합니다.</p>
+    <a class="back" href="./atlas-product-plan.html">← 기획안 본문으로 돌아가기</a>
+  </footer>
+
+</div>
+</body>
+</html>

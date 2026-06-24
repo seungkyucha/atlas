@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(artifact-design)",
+      "Bash(npm -v)",
+      "Bash(git --version)",
+      "Bash(gh --version)",
+      "Bash(gh auth *)",
+      "Bash(railway --version)",
+      "Bash(git config *)",
+      "Bash(railway whoami *)",
+      "Bash(railway list *)",
+      "Skill(claude-api)",
+      "Bash(npm install *)",
+      "Bash(node -e \"const p=require\\('./package.json'\\);console.log\\('next',p.dependencies.next\\);console.log\\(JSON.stringify\\(p.devDependencies,null,0\\)\\)\")",
+      "Bash(npm ls *)",
+      "Bash(npm run *)"
+    ]
+  }
+}

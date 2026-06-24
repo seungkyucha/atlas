@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ATLAS · 초기 기획안</title>
+<style>
+  :root{
+    --bg:#0f1117; --panel:#171a23; --panel-2:#1d2130; --line:#2a2f3e;
+    --ink:#e8eaf0; --muted:#9aa2b6; --faint:#717a90;
+    --accent:#6c8cff; --accent-2:#37d3b5; --accent-3:#f0a44a; --accent-4:#e06b8b;
+    --ok:#37d3b5; --warn:#f0a44a; --bad:#e06b8b;
+    --radius:14px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic","Segoe UI",sans-serif;
+    line-height:1.65; font-size:15px; -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--accent); text-decoration:none}
+  .layout{display:flex; min-height:100vh}
+
+  /* Sidebar */
+  .nav{
+    width:248px; flex:0 0 248px; position:sticky; top:0; height:100vh;
+    overflow-y:auto; padding:26px 18px; border-right:1px solid var(--line);
+    background:linear-gradient(180deg,#13151d,#0f1117);
+  }
+  .brand{display:flex; align-items:center; gap:10px; margin-bottom:6px}
+  .logo{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    display:grid;place-items:center;font-weight:800;color:#0b0d13;font-size:15px}
+  .brand b{font-size:17px;letter-spacing:.5px}
+  .brand small{display:block;color:var(--muted);font-size:11px;letter-spacing:.3px}
+  .nav h6{color:var(--faint);font-size:10.5px;letter-spacing:1.2px;text-transform:uppercase;
+    margin:22px 0 8px 8px;font-weight:700}
+  .nav a{display:block;color:var(--muted);padding:6px 10px;border-radius:8px;font-size:13.5px;margin:1px 0}
+  .nav a:hover{background:var(--panel-2);color:var(--ink)}
+
+  /* Main */
+  main{flex:1;min-width:0;padding:0 0 80px}
+  .wrap{max-width:1000px;margin:0 auto;padding:0 38px}
+
+  /* Hero */
+  .hero{padding:64px 38px 46px;background:
+    radial-gradient(900px 360px at 12% -10%,rgba(108,140,255,.18),transparent),
+    radial-gradient(700px 320px at 90% 0%,rgba(55,211,181,.13),transparent);
+    border-bottom:1px solid var(--line)}
+  .hero-in{max-width:1000px;margin:0 auto}
+  .eyebrow{color:var(--accent-2);font-weight:700;letter-spacing:2px;font-size:12px;text-transform:uppercase}
+  .hero h1{font-size:42px;margin:12px 0 6px;line-height:1.15;letter-spacing:-.5px}
+  .hero h1 span{background:linear-gradient(120deg,var(--accent),var(--accent-2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero p.lead{font-size:17px;color:var(--muted);max-width:680px;margin:8px 0 0}
+  .meta{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px}
+  .meta span{font-size:12px;color:var(--muted);background:var(--panel);border:1px solid var(--line);
+    padding:6px 12px;border-radius:999px}
+
+  section{padding-top:54px}
+  .sec-head{display:flex;align-items:baseline;gap:12px;margin-bottom:8px}
+  .sec-num{color:var(--accent);font-weight:800;font-size:14px;font-variant-numeric:tabular-nums}
+  h2{font-size:27px;margin:0;letter-spacing:-.3px}
+  h3{font-size:18px;margin:30px 0 10px}
+  .sub{color:var(--muted);margin:6px 0 18px;max-width:760px}
+  p{margin:10px 0}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px}
+  .grid{display:grid;gap:16px}
+  .g2{grid-template-columns:repeat(2,1fr)}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  @media(max-width:820px){.g2,.g3{grid-template-columns:1fr}}
+
+  .mod{position:relative;overflow:hidden}
+  .mod .tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.5px;
+    padding:3px 9px;border-radius:6px;margin-bottom:10px}
+  .mod h4{margin:0 0 8px;font-size:16.5px}
+  .mod ul{margin:8px 0 0;padding-left:18px;color:var(--muted);font-size:13.5px}
+  .mod ul li{margin:5px 0}
+  .mod .num{position:absolute;right:16px;top:14px;font-size:34px;font-weight:800;color:var(--line)}
+
+  ul.clean{list-style:none;padding:0;margin:12px 0}
+  ul.clean li{padding:9px 0 9px 26px;position:relative;border-bottom:1px dashed var(--line);color:var(--muted)}
+  ul.clean li:before{content:"▸";position:absolute;left:4px;color:var(--accent-2)}
+  ul.clean li b{color:var(--ink)}
+
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13px}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--faint);font-size:11px;text-transform:uppercase;letter-spacing:.6px;font-weight:700}
+  td b{color:var(--ink)}
+  .tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+  .tbl-wrap table{margin:0}
+  .tbl-wrap th{background:var(--panel-2)}
+  .yes{color:var(--ok);font-weight:700}.no{color:#566;}.part{color:var(--warn)}
+  .pill{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+
+  /* pipeline */
+  .pipe{display:flex;flex-wrap:wrap;gap:10px;align-items:stretch;margin:16px 0}
+  .pstep{flex:1;min-width:140px;background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .pstep .k{font-size:11px;color:var(--accent);font-weight:700;letter-spacing:.5px}
+  .pstep h5{margin:6px 0 4px;font-size:14px}
+  .pstep p{margin:0;font-size:12px;color:var(--muted)}
+  .arrow{align-self:center;color:var(--faint);font-size:20px}
+  @media(max-width:820px){.arrow{display:none}}
+
+  /* roadmap */
+  .road{display:grid;gap:14px}
+  .phase{display:grid;grid-template-columns:130px 1fr;gap:18px;background:var(--panel);
+    border:1px solid var(--line);border-radius:12px;padding:18px 20px}
+  .phase .when{color:var(--accent);font-weight:800;font-size:14px}
+  .phase .when small{display:block;color:var(--muted);font-weight:400;font-size:12px;margin-top:3px}
+  .phase ul{margin:0;padding-left:18px;color:var(--muted);font-size:13.5px}
+  .phase ul li{margin:4px 0}
+  @media(max-width:820px){.phase{grid-template-columns:1fr}}
+
+  .status-flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0}
+  .st{background:var(--panel-2);border:1px solid var(--line);padding:7px 13px;border-radius:8px;font-size:12.5px;font-weight:600}
+  .st-sep{color:var(--faint)}
+
+  .note{border-left:3px solid var(--accent);background:rgba(108,140,255,.07);padding:12px 16px;border-radius:0 10px 10px 0;color:var(--muted);font-size:13.5px;margin:14px 0}
+  .footer{max-width:1000px;margin:60px auto 0;padding:24px 38px 0;border-top:1px solid var(--line);color:var(--faint);font-size:12.5px}
+  code{background:var(--panel-2);border:1px solid var(--line);padding:1px 6px;border-radius:5px;font-size:12.5px;color:var(--accent-2)}
+  .kpi{display:flex;gap:8px;align-items:baseline}
+  .kpi b{font-size:22px;color:var(--accent-2)}
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="nav">
+    <div class="brand">
+      <div class="logo">A</div>
+      <div><b>ATLAS</b><small>AI Translation &amp; Localization Assistant</small></div>
+    </div>
+    <h6>기획안</h6>
+    <a href="#overview">0 · 개요 &amp; 비전</a>
+    <a href="#problem">1 · 문제 정의 / 사용자</a>
+    <a href="#modules">2 · 핵심 기능 모듈</a>
+    <a href="#org">3 · 조직 &amp; 권한</a>
+    <a href="#ai">4 · AI 파이프라인</a>
+    <a href="#workspace">5 · 번역 워크스페이스</a>
+    <a href="#assets">6 · 자산 관리 (용어/화자/맥락)</a>
+    <a href="#lqa">7 · LQA &amp; 감수</a>
+    <a href="#data">8 · 데이터 모델</a>
+    <a href="#stack">9 · 기술 스택</a>
+    <a href="#roadmap">10 · 로드맵 &amp; MVP</a>
+    <a href="#kpi">11 · 성공 지표</a>
+  </aside>
+
+  <!-- MAIN -->
+  <main>
+    <div class="hero">
+      <div class="hero-in">
+        <div class="eyebrow">Product Plan · v0.1 (Draft)</div>
+        <h1>AI 기반 번역·로컬라이제이션을<br><span>하나의 워크스페이스</span>에서</h1>
+        <p class="lead">ATLAS는 용어집·화자·내러티브 맥락을 일관되게 관리하고, 기존 번역 자산을 AI로 분석해 재사용 가능한 자산으로 전환하는 게임/내러티브 콘텐츠 로컬라이제이션 플랫폼입니다.</p>
+        <div class="meta">
+          <span>📅 2026-06-24</span>
+          <span>✍️ scha@superawesome.co.kr</span>
+          <span>🎯 게임 · 내러티브 로컬라이제이션</span>
+          <span>📄 초기 기획안</span>
+        </div>
+        <p style="margin-top:18px"><a href="./atlas-design-concepts.html" style="display:inline-block;background:linear-gradient(120deg,var(--accent),var(--accent-2));color:#0b0d13;font-weight:700;padding:11px 20px;border-radius:10px;font-size:14px">🎨 디자인 컨셉 시안 3종 보기 →</a></p>
+      </div>
+    </div>
+
+    <div class="wrap">
+
+      <!-- 0 OVERVIEW -->
+      <section id="overview">
+        <div class="sec-head"><span class="sec-num">00</span><h2>개요 &amp; 비전</h2></div>
+        <p class="sub">"번역을 잘하는 도구"가 아니라 "번역 품질을 조직 차원에서 일관되게 유지·축적하는 시스템". 사람의 판단(감수·맥락)과 AI의 속도를 결합하는 것이 ATLAS의 핵심 철학입니다.</p>
+        <div class="grid g3">
+          <div class="card">
+            <h4>🎯 미션</h4>
+            <p style="color:var(--muted);font-size:13.5px;margin:0">AI로 번역을 가속하되, 용어·어투·맥락의 일관성을 사람이 통제할 수 있는 구조를 제공한다.</p>
+          </div>
+          <div class="card">
+            <h4>💡 차별점</h4>
+            <p style="color:var(--muted);font-size:13.5px;margin:0">단순 MT가 아닌 <b>화자·맥락 인지형 번역</b>. 기존 번역 문서를 AI가 역분석해 자산(TM/용어/화자)으로 자동 DB화.</p>
+          </div>
+          <div class="card">
+            <h4>🏢 운영 단위</h4>
+            <p style="color:var(--muted);font-size:13.5px;margin:0">법인 → 스튜디오 → 프로덕트의 3계층으로 분리 관리하며, 멤버별 역할 기반 권한(RBAC)을 부여한다.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 1 PROBLEM -->
+      <section id="problem">
+        <div class="sec-head"><span class="sec-num">01</span><h2>문제 정의 &amp; 타깃 사용자</h2></div>
+        <p class="sub">현장의 로컬라이제이션은 "도구 부재"보다 "일관성·자산화·협업"의 문제가 더 큽니다.</p>
+        <div class="grid g2">
+          <div class="card">
+            <h3 style="margin-top:0">해결하려는 문제(Pain)</h3>
+            <ul class="clean">
+              <li><b>용어 불일치</b> — 동일 용어가 챕터·번역가마다 다르게 번역됨</li>
+              <li><b>어투/화자 붕괴</b> — 캐릭터 말투, 존댓말/반말 일관성 깨짐</li>
+              <li><b>맥락 손실</b> — 앞뒤 내러티브를 모르고 번역 → 오역</li>
+              <li><b>자산 휘발</b> — 과거 번역물이 파일로만 남아 재사용 불가</li>
+              <li><b>감수 비효율</b> — LQA 기준이 사람 머릿속에만 존재</li>
+              <li><b>조직 분리 부재</b> — 여러 타이틀/팀의 데이터 혼재</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3 style="margin-top:0">사용자 역할(Persona)</h3>
+            <ul class="clean">
+              <li><b>PM / 로컬 디렉터</b> — 프로젝트 세팅, 진척·품질 관리</li>
+              <li><b>번역가(Translator)</b> — 세그먼트 번역, 용어·맥락 참조</li>
+              <li><b>감수자(Reviewer/LQA)</b> — 품질 검수, 이슈 등록</li>
+              <li><b>용어/내러티브 관리자</b> — 용어집·화자·세계관 정의</li>
+              <li><b>스튜디오/법인 관리자</b> — 조직·멤버·권한·정책</li>
+              <li><b>외부 협력사(Guest)</b> — 제한된 범위 접근</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2 MODULES -->
+      <section id="modules">
+        <div class="sec-head"><span class="sec-num">02</span><h2>핵심 기능 모듈</h2></div>
+        <p class="sub">기존 요구사항을 8개 모듈로 정제했습니다. 각 모듈은 독립적으로 가치를 제공하면서도 AI 파이프라인과 자산 DB를 공유합니다.</p>
+        <div class="grid g2">
+
+          <div class="card mod"><div class="num">01</div>
+            <span class="tag" style="background:rgba(108,140,255,.15);color:var(--accent)">CORE</span>
+            <h4>AI 번역 엔진</h4>
+            <ul>
+              <li>용어집·TM·화자·맥락을 프롬프트에 자동 주입한 컨텍스트 인지형 번역</li>
+              <li>세그먼트 단위 / 문서 일괄(Batch) 번역</li>
+              <li>대안 번역 제안 · 신뢰도(confidence) 표시</li>
+              <li>모델 선택(품질↔속도) 및 다국어 동시 번역</li>
+            </ul>
+          </div>
+
+          <div class="card mod"><div class="num">02</div>
+            <span class="tag" style="background:rgba(55,211,181,.15);color:var(--accent-2)">ASSET</span>
+            <h4>용어집(Glossary) 관리</h4>
+            <ul>
+              <li>용어/번역/품사/도메인/금지어/DNT(번역 금지) 속성</li>
+              <li>프로덕트별·언어쌍별 용어집, 상속/오버라이드</li>
+              <li>번역 중 실시간 용어 매칭 &amp; 위반 경고</li>
+              <li>승인 워크플로우(제안→검토→확정)</li>
+            </ul>
+          </div>
+
+          <div class="card mod"><div class="num">03</div>
+            <span class="tag" style="background:rgba(240,164,74,.15);color:var(--accent-3)">CONTEXT</span>
+            <h4>화자 &amp; 어투 관리</h4>
+            <ul>
+              <li>캐릭터 프로필(성격·나이·말투·관계도)</li>
+              <li>화자별 어투 규칙(존댓말/반말, 1인칭, 어미 패턴)</li>
+              <li>세그먼트에 화자 태깅 → 번역 시 어투 자동 반영</li>
+              <li>화자 간 관계에 따른 호칭 일관성 관리</li>
+            </ul>
+          </div>
+
+          <div class="card mod"><div class="num">04</div>
+            <span class="tag" style="background:rgba(240,164,74,.15);color:var(--accent-3)">CONTEXT</span>
+            <h4>내러티브 맥락 관리</h4>
+            <ul>
+              <li>세계관/스토리 아크/씬(scene) 단위 맥락 노트</li>
+              <li>세그먼트-씬 연결, 앞뒤 문맥 자동 참조 윈도우</li>
+              <li>분기/선택지 등 비선형 서사 구조 표현</li>
+              <li>스포일러/톤 가이드 등 번역 지침 첨부</li>
+            </ul>
+          </div>
+
+          <div class="card mod"><div class="num">05</div>
+            <span class="tag" style="background:rgba(108,140,255,.15);color:var(--accent)">CORE</span>
+            <h4>문서 인제스트 &amp; 자동 분석</h4>
+            <ul>
+              <li>기존 번역 문서 업로드(xlsx·csv·xliff·json·docx)</li>
+              <li>AI가 화자 추정 · 용어 추출 · 맥락 분류 자동 수행</li>
+              <li>원문/번역 정렬(alignment) → TM 유닛 생성</li>
+              <li>검수 후 용어집·화자·TM으로 DB화</li>
+            </ul>
+          </div>
+
+          <div class="card mod"><div class="num">06</div>
+            <span class="tag" style="background:rgba(55,211,181,.15);color:var(--accent-2)">ASSET</span>
+            <h4>번역 메모리(TM)</h4>
+            <ul>
+              <li>정확/퍼지(fuzzy)/의미 기반(임베딩) 매칭</li>
+              <li>매치율에 따른 자동 채움 &amp; 재활용</li>
+              <li>프로덕트·도메인별 TM 분리 및 우선순위</li>
+              <li>중복·충돌 정리(메인터넌스) 도구</li>
+            </ul>
+          </div>
+
+          <div class="card mod"><div class="num">07</div>
+            <span class="tag" style="background:rgba(224,107,139,.15);color:var(--accent-4)">QA</span>
+            <h4>LQA &amp; 감수</h4>
+            <ul>
+              <li>자동 QA: 용어 준수·어투·태그/플레이스홀더·길이·금지어</li>
+              <li>분야 적합성 감수(해당 도메인 표현인지 판정)</li>
+              <li>이슈 등록·심각도·코멘트·재작업 루프</li>
+              <li>품질 점수(LQA score) 및 리포트</li>
+            </ul>
+          </div>
+
+          <div class="card mod"><div class="num">08</div>
+            <span class="tag" style="background:rgba(154,162,182,.18);color:var(--muted)">ADMIN</span>
+            <h4>조직 · 멤버 · 권한</h4>
+            <ul>
+              <li>법인 / 스튜디오 / 프로덕트 3계층 분리</li>
+              <li>역할 기반 권한(RBAC) + 프로젝트별 할당</li>
+              <li>초대·SSO·감사 로그(audit log)</li>
+              <li>대시보드: 진척·품질·작업량 가시화</li>
+            </ul>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- 3 ORG & PERMISSION -->
+      <section id="org">
+        <div class="sec-head"><span class="sec-num">03</span><h2>조직 구조 &amp; 권한 모델</h2></div>
+        <p class="sub">데이터·과금·접근 통제의 경계를 3계층으로 정의합니다. 모든 자산(용어/화자/TM/맥락)은 상속 가능하되 하위에서 오버라이드할 수 있습니다.</p>
+
+        <div class="pipe">
+          <div class="pstep"><div class="k">LEVEL 1</div><h5>법인 (Corporation)</h5><p>최상위 테넌트. 결제·보안 정책·전사 자산·멤버 풀.</p></div>
+          <div class="arrow">→</div>
+          <div class="pstep"><div class="k">LEVEL 2</div><h5>스튜디오 (Studio)</h5><p>팀/브랜드 단위. 자체 멤버·공용 용어집·TM.</p></div>
+          <div class="arrow">→</div>
+          <div class="pstep"><div class="k">LEVEL 3</div><h5>프로덕트 (Product)</h5><p>게임/타이틀 단위. 언어쌍·프로젝트·세계관·화자.</p></div>
+          <div class="arrow">→</div>
+          <div class="pstep"><div class="k">WORK</div><h5>프로젝트 / 문서</h5><p>특정 언어쌍·버전의 실제 번역 작업 공간.</p></div>
+        </div>
+
+        <h3>역할별 권한 매트릭스 (RBAC)</h3>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr>
+              <th>권한 / 역할</th><th>법인 관리자</th><th>스튜디오 매니저</th><th>PM</th><th>번역가</th><th>감수자</th><th>Guest</th>
+            </tr></thead>
+            <tbody>
+              <tr><td><b>조직·멤버·권한 관리</b></td><td class="yes">✔ 전체</td><td class="part">◐ 스튜디오</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="no">—</td></tr>
+              <tr><td><b>프로덕트/프로젝트 생성</b></td><td class="yes">✔</td><td class="yes">✔</td><td class="part">◐ 할당분</td><td class="no">—</td><td class="no">—</td><td class="no">—</td></tr>
+              <tr><td><b>용어집·화자·맥락 편집</b></td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td><td class="part">◐ 제안</td><td class="part">◐ 제안</td><td class="no">—</td></tr>
+              <tr><td><b>번역 작성/편집</b></td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td><td class="part">◐ 수정</td><td class="no">읽기</td></tr>
+              <tr><td><b>감수·승인(LQA)</b></td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td><td class="no">—</td><td class="yes">✔</td><td class="no">—</td></tr>
+              <tr><td><b>문서 업로드/내보내기</b></td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td><td class="part">◐</td><td class="no">—</td><td class="no">—</td></tr>
+              <tr><td><b>대시보드·리포트 열람</b></td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td><td class="part">◐ 본인</td><td class="part">◐ 담당</td><td class="part">◐ 제한</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="note">✔ 전체 권한 · ◐ 부분/조건부 · — 권한 없음. 역할은 <code>법인/스튜디오/프로젝트</code> 각 스코프별로 별도 부여 가능 (예: 한 사람이 A스튜디오 매니저이자 B프로젝트 번역가).</div>
+      </section>
+
+      <!-- 4 AI PIPELINE -->
+      <section id="ai">
+        <div class="sec-head"><span class="sec-num">04</span><h2>AI 파이프라인</h2></div>
+        <p class="sub">ATLAS의 AI는 두 갈래로 동작합니다 — (A) 신규 번역 생성, (B) 기존 문서 역분석·자산화.</p>
+
+        <h3>A. 컨텍스트 인지형 번역 생성</h3>
+        <div class="pipe">
+          <div class="pstep"><div class="k">INPUT</div><h5>원문 세그먼트</h5><p>+ 화자 태그 + 씬 연결</p></div>
+          <div class="arrow">→</div>
+          <div class="pstep"><div class="k">RETRIEVE</div><h5>컨텍스트 조립</h5><p>용어집 매칭 · TM 유사 · 맥락 노트 · 앞뒤 문맥</p></div>
+          <div class="arrow">→</div>
+          <div class="pstep"><div class="k">GENERATE</div><h5>LLM 번역</h5><p>화자 어투·용어 규칙 주입한 프롬프트</p></div>
+          <div class="arrow">→</div>
+          <div class="pstep"><div class="k">CHECK</div><h5>자동 QA</h5><p>용어·태그·길이 검증 + 신뢰도</p></div>
+          <div class="arrow">→</div>
+          <div class="pstep"><div class="k">HUMAN</div><h5>번역가 확정</h5><p>수정 → TM 적립</p></div>
+        </div>
+
+        <h3>B. 기존 문서 자동 분석 &amp; DB화</h3>
+        <div class="pipe">
+          <div class="pstep"><div class="k">UPLOAD</div><h5>문서 파싱</h5><p>xlsx·csv·xliff·json·docx 세그먼트화</p></div>
+          <div class="arrow">→</div>
+          <div class="pstep"><div class="k">ALIGN</div><h5>원문↔번역 정렬</h5><p>쌍 매칭, 누락 탐지</p></div>
+          <div class="arrow">→</div>
+          <div class="pstep"><div class="k">ANALYZE</div><h5>AI 분류</h5><p>화자 추정 · 용어 추출 · 맥락/도메인 분류</p></div>
+          <div class="arrow">→</div>
+          <div class="pstep"><div class="k">REVIEW</div><h5>사람 검수</h5><p>추출 결과 확인·수정</p></div>
+          <div class="arrow">→</div>
+          <div class="pstep"><div class="k">STORE</div><h5>자산 DB화</h5><p>TM · 용어집 · 화자 등록</p></div>
+        </div>
+        <div class="note">⚙️ 분석·감수 등 정교한 작업은 <code>claude-opus-4-8</code>, 대량 일괄 번역은 비용 효율적인 <code>claude-sonnet-4-6</code> 등으로 모델을 분리 운용 → 품질·비용 균형. 임베딩 기반 의미 검색으로 TM/맥락 유사도 매칭.</div>
+      </section>
+
+      <!-- 5 WORKSPACE -->
+      <section id="workspace">
+        <div class="sec-head"><span class="sec-num">05</span><h2>번역 워크스페이스 (에디터)</h2></div>
+        <p class="sub">CAT 도구 스타일의 3단 레이아웃 — 세그먼트 그리드(좌) · 번역 입력(중) · 컨텍스트 패널(우).</p>
+        <div class="grid g3">
+          <div class="card">
+            <h4>① 세그먼트 그리드</h4>
+            <ul class="clean" style="margin:0">
+              <li>원문/번역 행 단위 · 상태 색상</li>
+              <li>화자·씬 태그 표시</li>
+              <li>필터(미번역·이슈·화자별)</li>
+              <li>일괄 선택·일괄 번역</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h4>② 번역 에디터</h4>
+            <ul class="clean" style="margin:0">
+              <li>AI 제안 + 대안 후보</li>
+              <li>TM 매치 자동 채움</li>
+              <li>인라인 용어 하이라이트</li>
+              <li>태그/플레이스홀더 보호</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h4>③ 컨텍스트 패널</h4>
+            <ul class="clean" style="margin:0">
+              <li>현재 화자 프로필·어투</li>
+              <li>관련 용어집 항목</li>
+              <li>씬/내러티브 노트</li>
+              <li>QA 경고 · 감수 코멘트</li>
+            </ul>
+          </div>
+        </div>
+
+        <h3>번역 상태 흐름 (Status Workflow)</h3>
+        <div class="status-flow">
+          <span class="st" style="border-color:var(--faint)">미번역</span><span class="st-sep">→</span>
+          <span class="st" style="border-color:var(--accent)">AI 초벌</span><span class="st-sep">→</span>
+          <span class="st" style="border-color:var(--accent)">번역중</span><span class="st-sep">→</span>
+          <span class="st" style="border-color:var(--accent-2)">번역완료</span><span class="st-sep">→</span>
+          <span class="st" style="border-color:var(--accent-3)">감수중</span><span class="st-sep">→</span>
+          <span class="st" style="border-color:var(--accent-4)">반려/재작업</span><span class="st-sep">⟲</span>
+          <span class="st" style="border-color:var(--ok)">승인</span><span class="st-sep">→</span>
+          <span class="st" style="border-color:var(--ok)">배포/내보내기</span>
+        </div>
+      </section>
+
+      <!-- 6 ASSETS -->
+      <section id="assets">
+        <div class="sec-head"><span class="sec-num">06</span><h2>자산 관리 상세 (용어 · 화자 · 맥락)</h2></div>
+        <p class="sub">ATLAS의 핵심 가치는 "번역 자산의 구조화된 축적"입니다. 각 자산의 속성을 정의합니다.</p>
+        <div class="grid g3">
+          <div class="card">
+            <h4>📘 용어집 항목</h4>
+            <ul class="clean" style="margin:0;font-size:13px">
+              <li><b>원어 / 번역어</b></li>
+              <li><b>품사·도메인</b> 분류</li>
+              <li><b>DNT</b> (번역 금지 / 고유명사)</li>
+              <li><b>금지 표현</b> 블랙리스트</li>
+              <li><b>용례·주석</b></li>
+              <li><b>상태</b> 제안/확정/폐기</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h4>🎭 화자 프로필</h4>
+            <ul class="clean" style="margin:0;font-size:13px">
+              <li><b>이름·역할·성격</b></li>
+              <li><b>어투</b> (존/반말, 어미)</li>
+              <li><b>1인칭 / 호칭</b> 규칙</li>
+              <li><b>관계도</b> (타 화자 대상 말투)</li>
+              <li><b>언어별 어투</b> 변형</li>
+              <li><b>예시 대사</b></li>
+            </ul>
+          </div>
+          <div class="card">
+            <h4>🗺️ 내러티브 맥락</h4>
+            <ul class="clean" style="margin:0;font-size:13px">
+              <li><b>세계관·설정</b> 노트</li>
+              <li><b>스토리 아크 / 씬</b></li>
+              <li><b>분기·선택지</b> 구조</li>
+              <li><b>톤 가이드</b></li>
+              <li><b>스포일러</b> 주의 플래그</li>
+              <li><b>세그먼트 연결</b></li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- 7 LQA -->
+      <section id="lqa">
+        <div class="sec-head"><span class="sec-num">07</span><h2>LQA &amp; 감수 체계</h2></div>
+        <p class="sub">"자동으로 잡을 수 있는 것은 자동으로, 판단이 필요한 것은 사람이." 2단계 품질 관문을 둡니다.</p>
+        <div class="grid g2">
+          <div class="card">
+            <h3 style="margin-top:0">자동 QA 체크 (규칙 + AI)</h3>
+            <ul class="clean" style="margin:0">
+              <li><b>용어 준수</b> — 용어집 위반·금지어 검출</li>
+              <li><b>어투 일관성</b> — 화자 규칙 대비 존/반말·어미</li>
+              <li><b>태그·플레이스홀더</b> — <code>{name}</code>, 마크업 무결성</li>
+              <li><b>길이·UI 제약</b> — 글자수/줄바꿈 한도</li>
+              <li><b>누락·미번역</b> — 빈 세그먼트, 원문 잔류</li>
+              <li><b>숫자·서식</b> — 단위·날짜·통화 일치</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3 style="margin-top:0">사람 감수 (LQA)</h3>
+            <ul class="clean" style="margin:0">
+              <li><b>분야 적합성</b> — 해당 도메인 실사용 표현인지</li>
+              <li><b>맥락 정확성</b> — 내러티브 흐름상 오역 여부</li>
+              <li><b>화자성</b> — 캐릭터다움 / 톤 유지</li>
+              <li><b>이슈 등록</b> — 심각도(Critical~Minor)·카테고리</li>
+              <li><b>재작업 루프</b> — 반려 → 수정 → 재검</li>
+              <li><b>품질 점수화</b> — LQA 스코어·오류 유형 통계</li>
+            </ul>
+          </div>
+        </div>
+        <div class="note">감수 이슈는 <b>MQM/LISA 류 표준 카테고리</b>(정확성·유창성·용어·스타일·로케일)를 차용해 정량화하면, 번역가·벤더별 품질 비교와 개선 추적이 가능합니다.</div>
+      </section>
+
+      <!-- 8 DATA MODEL -->
+      <section id="data">
+        <div class="sec-head"><span class="sec-num">08</span><h2>데이터 모델 (개념)</h2></div>
+        <p class="sub">핵심 엔티티와 관계. 실제 구현 시 멀티테넌시·소프트삭제·버전관리를 전제로 설계합니다.</p>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>엔티티</th><th>주요 속성</th><th>관계</th></tr></thead>
+            <tbody>
+              <tr><td><b>Corporation</b></td><td>name, plan, policy</td><td>1—N Studio</td></tr>
+              <tr><td><b>Studio</b></td><td>name, members</td><td>1—N Product</td></tr>
+              <tr><td><b>Product</b></td><td>name, lang_pairs, settings</td><td>1—N Project / Glossary / Speaker</td></tr>
+              <tr><td><b>Project</b></td><td>source_lang, target_langs, status</td><td>1—N Document</td></tr>
+              <tr><td><b>Document</b></td><td>filename, format, version</td><td>1—N Segment</td></tr>
+              <tr><td><b>Segment</b></td><td>source, target, status, char_limit</td><td>N—1 Speaker / Scene · N—N QA Issue</td></tr>
+              <tr><td><b>GlossaryTerm</b></td><td>source, target, pos, DNT, forbidden, status</td><td>N—1 Glossary</td></tr>
+              <tr><td><b>Speaker</b></td><td>name, persona, tone_rules, relations</td><td>1—N Segment</td></tr>
+              <tr><td><b>NarrativeContext</b></td><td>arc, scene, notes, branch</td><td>N—N Segment</td></tr>
+              <tr><td><b>TMUnit</b></td><td>source, target, embedding, origin</td><td>N—1 Product/Domain</td></tr>
+              <tr><td><b>QAIssue</b></td><td>type, severity, comment, status</td><td>N—1 Segment · N—1 Reviewer</td></tr>
+              <tr><td><b>Member / Role</b></td><td>email, scope, role, permissions</td><td>N—N (scope별 할당)</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 9 STACK -->
+      <section id="stack">
+        <div class="sec-head"><span class="sec-num">09</span><h2>기술 스택 제안</h2></div>
+        <p class="sub">AI·벡터검색·실시간 협업·멀티테넌시를 고려한 권장 구성(확정 아님, 논의용).</p>
+        <div class="grid g2">
+          <div class="card">
+            <h4>프론트엔드</h4>
+            <ul class="clean" style="margin:0">
+              <li><b>Next.js + TypeScript</b> (App Router)</li>
+              <li><b>Tailwind CSS</b> + 컴포넌트 시스템</li>
+              <li>가상 스크롤(대량 세그먼트), 실시간 협업(WebSocket/CRDT)</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h4>백엔드 / 데이터</h4>
+            <ul class="clean" style="margin:0">
+              <li><b>NestJS(Node)</b> 또는 <b>FastAPI(Python)</b></li>
+              <li><b>PostgreSQL + pgvector</b> (TM 의미검색·임베딩)</li>
+              <li>객체 스토리지(원본 파일), 작업 큐(일괄 번역)</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h4>AI</h4>
+            <ul class="clean" style="margin:0">
+              <li><b>Claude API</b> — 분석/감수: <code>claude-opus-4-8</code>, 대량 번역: <code>claude-sonnet-4-6</code></li>
+              <li>임베딩 기반 TM/맥락 검색, 프롬프트 템플릿 관리</li>
+              <li>토큰·비용 모니터링</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h4>운영 / 연동</h4>
+            <ul class="clean" style="margin:0">
+              <li>SSO/OAuth, RBAC, 감사 로그</li>
+              <li>가져오기/내보내기: <b>XLIFF·CSV·XLSX·JSON</b> + 게임 엔진 포맷</li>
+              <li>Webhook·REST API (CI 연동)</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- 10 ROADMAP -->
+      <section id="roadmap">
+        <div class="sec-head"><span class="sec-num">10</span><h2>로드맵 &amp; MVP 범위</h2></div>
+        <p class="sub">"일관된 번역을 만들고 확정하는 최소 루프"부터 시작해 자산화·자동감수로 확장합니다.</p>
+        <div class="road">
+          <div class="phase">
+            <div class="when">Phase 1<small>MVP · 0~3개월</small></div>
+            <ul>
+              <li>조직(법인/스튜디오/프로덕트)·멤버·기본 권한</li>
+              <li>프로젝트/문서 생성, 세그먼트 에디터</li>
+              <li><b>AI 번역 + 용어집 적용</b>, 용어집 CRUD</li>
+              <li>기본 TM(정확/퍼지 매치), 가져오기/내보내기(XLSX·CSV)</li>
+            </ul>
+          </div>
+          <div class="phase">
+            <div class="when">Phase 2<small>3~6개월</small></div>
+            <ul>
+              <li><b>화자·어투 관리</b> 및 번역 반영</li>
+              <li><b>내러티브 맥락</b> 노트·씬 연결</li>
+              <li><b>문서 인제스트 → AI 자동 분석(화자/용어/맥락) → DB화</b></li>
+              <li>의미 기반 TM(임베딩 검색)</li>
+            </ul>
+          </div>
+          <div class="phase">
+            <div class="when">Phase 3<small>6~9개월</small></div>
+            <ul>
+              <li><b>자동 QA + 사람 LQA</b> 워크플로우, 이슈 트래킹</li>
+              <li>품질 점수(MQM류)·대시보드·리포트</li>
+              <li>분야 적합성 감수, 권한 세분화</li>
+            </ul>
+          </div>
+          <div class="phase">
+            <div class="when">Phase 4<small>9개월+</small></div>
+            <ul>
+              <li>공개 API·Webhook·CI 연동, 게임 엔진 포맷</li>
+              <li>실시간 공동 편집, 외부 벤더 협업</li>
+              <li>고급 분석·자동화(번역가 추천·작업 배분)</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- 11 KPI -->
+      <section id="kpi">
+        <div class="sec-head"><span class="sec-num">11</span><h2>성공 지표 (KPI)</h2></div>
+        <p class="sub">"빠르게" + "일관되게" + "재사용 가능하게"를 측정합니다.</p>
+        <div class="grid g3">
+          <div class="card"><div class="kpi"><b>↓ 40%+</b></div><p style="color:var(--muted);font-size:13.5px;margin:6px 0 0">세그먼트당 평균 번역 소요 시간</p></div>
+          <div class="card"><div class="kpi"><b>↑ 95%+</b></div><p style="color:var(--muted);font-size:13.5px;margin:6px 0 0">용어집 준수율(자동 측정)</p></div>
+          <div class="card"><div class="kpi"><b>↓ LQA</b></div><p style="color:var(--muted);font-size:13.5px;margin:6px 0 0">감수 단계 오류 발생률·재작업률</p></div>
+          <div class="card"><div class="kpi"><b>↑ TM</b></div><p style="color:var(--muted);font-size:13.5px;margin:6px 0 0">TM 재사용률(레버리지)</p></div>
+          <div class="card"><div class="kpi"><b>↑ 자산</b></div><p style="color:var(--muted);font-size:13.5px;margin:6px 0 0">자동 DB화된 용어·화자·TM 수</p></div>
+          <div class="card"><div class="kpi"><b>↑ 채택</b></div><p style="color:var(--muted);font-size:13.5px;margin:6px 0 0">활성 사용자·프로젝트 수</p></div>
+        </div>
+      </section>
+
+      <div class="footer">
+        <p><b>ATLAS</b> — AI Translation &amp; Localization Assistant · 초기 기획안 v0.1 (Draft)</p>
+        <p>이 문서는 논의를 위한 초안입니다. 다음 단계: ① 우선순위 합의 → ② MVP 범위 확정 → ③ 화면 설계(와이어프레임) → ④ 데이터 스키마 상세화.</p>
+      </div>
+
+    </div>
+  </main>
+</div>
+</body>
+</html>
