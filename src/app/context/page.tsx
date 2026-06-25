@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { PageHeader } from "@/components/PageHeader";
-import { db, getProduct, productSpeakers } from "@/lib/store";
-import { SpeakersEditor } from "@/components/SpeakersEditor";
+import { db, getProduct, productContexts } from "@/lib/store";
+import { ContextEditor } from "@/components/ContextEditor";
 
 export const dynamic = "force-dynamic";
 
-export default function SpeakersPage({
+export default function ContextPage({
   searchParams,
 }: {
   searchParams: { product?: string };
@@ -18,14 +18,14 @@ export default function SpeakersPage({
     <>
       <PageHeader
         crumb="자산 관리"
-        title="화자 · 어투"
-        subtitle="캐릭터별 말투를 언어별로 정의 — AI 번역 시 자동 반영"
+        title="내러티브 맥락"
+        subtitle="씬/아크별 맥락 노트와 언어별 번역 가이드"
         right={
           <div className="flex gap-1.5">
             {db.products.map((p) => (
               <Link
                 key={p.id}
-                href={`/speakers?product=${p.id}`}
+                href={`/context?product=${p.id}`}
                 className={`rounded-lg px-3 py-1.5 text-[12.5px] font-semibold ${
                   p.id === product.id ? "bg-indigo-soft text-indigo-deep" : "text-muted hover:bg-line2"
                 }`}
@@ -37,7 +37,7 @@ export default function SpeakersPage({
         }
       />
       <main className="px-8 py-6">
-        <SpeakersEditor speakers={productSpeakers(product.id)} targetLangs={product.targetLangs} />
+        <ContextEditor contexts={productContexts(product.id)} targetLangs={product.targetLangs} />
       </main>
     </>
   );

@@ -2,18 +2,27 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Project, Segment, GlossaryTerm } from "@/lib/types";
-import { speakers, approvedGlossary } from "@/lib/data";
+import {
+  Project,
+  Product,
+  Speaker,
+  GlossaryTerm,
+  ContextNote,
+  Segment,
+  SegmentStatus,
+} from "@/lib/types";
+import { langLabel, modelLabel, engineMap } from "@/lib/config";
 import { StatusBadge, STATUS_META } from "@/components/Status";
 
-const speakerById = Object.fromEntries(speakers.map((s) => [s.id, s]));
-
-function matchedTerms(source: string): GlossaryTerm[] {
-  const lower = source.toLowerCase();
-  return approvedGlossary.filter((g) =>
-    new RegExp(`\\b${g.source.toLowerCase()}\\b`).test(lower)
-  );
-}
+const dotColor: Record<SegmentStatus, string> = {
+  untranslated: "bg-line",
+  ai_draft: "bg-indigo",
+  translating: "bg-indigo",
+  translated: "bg-ok",
+  in_review: "bg-warn",
+  rejected: "bg-bad",
+  approved: "bg-ok",
+};
 
 interface QACheck {
   label: string;
@@ -21,205 +30,258 @@ interface QACheck {
   detail: string;
 }
 
-function runQA(seg: Segment, terms: GlossaryTerm[]): QACheck[] {
+function runQA(
+  text: string,
+  speaker: Speaker | undefined,
+  lang: string,
+  charLimit?: number
+): QACheck[] {
   const checks: QACheck[] = [];
-  const target = seg.target.trim();
+  const t = text.trim();
+  checks.push({ label: "번역 존재", ok: t.length > 0, detail: t.length > 0 ? "작성됨" : "미작성" });
 
-  // 1. not empty
-  checks.push({
-    label: "번역 존재",
-    ok: target.length > 0,
-    detail: target.length > 0 ? "작성됨" : "미작성",
-  });
-
-  // 2. glossary adherence
-  const missing = terms.filter((g) => !g.dnt && !seg.target.includes(g.target));
-  checks.push({
-    label: "용어 준수",
-    ok: missing.length === 0,
-    detail:
-      missing.length === 0
-        ? `${terms.length}건 일치`
-        : `누락: ${missing.map((m) => m.target).join(", ")}`,
-  });
-
-  // 3. length limit
-  if (seg.charLimit) {
-    const len = [...target].length;
-    checks.push({
-      label: "길이 제한",
-      ok: len <= seg.charLimit,
-      detail: `${len} / ${seg.charLimit}자`,
-    });
+  if (charLimit) {
+    const len = [...t].length;
+    checks.push({ label: "길이", ok: len <= charLimit, detail: `${len}/${charLimit}자` });
   }
 
-  // 4. register heuristic (반말 should not end with 요/습니다)
-  const sp = seg.speakerId ? speakerById[seg.speakerId] : undefined;
-  if (sp && target.length > 0) {
-    const endsPolite = /(요|니다|세요|십시오)[.!?…」"']*$/.test(target);
+  const reg = speaker?.tones[lang]?.register;
+  if (reg && t.length > 0 && (reg === "반말" || reg === "존댓말")) {
+    const endsPolite = /(요|니다|세요|십시오)[.!?…」"']*$/.test(t);
     let ok = true;
-    let detail = `${sp.register} 어울림`;
-    if (sp.register === "반말" && endsPolite) {
+    let detail = `${reg} 어울림`;
+    if (reg === "반말" && endsPolite) {
       ok = false;
-      detail = "반말 화자인데 존대 어미 사용";
-    } else if (sp.register === "존댓말" && !endsPolite) {
+      detail = "반말인데 존대 어미";
+    } else if (reg === "존댓말" && !endsPolite) {
       ok = false;
-      detail = "존댓말 화자인데 종결어미 확인 필요";
+      detail = "존댓말 종결어미 확인";
     }
-    checks.push({ label: "어투 일치", ok, detail });
+    checks.push({ label: "어투", ok, detail });
   }
-
   return checks;
 }
 
-export function Workspace({ project }: { project: Project }) {
-  const [segments, setSegments] = useState<Segment[]>(project.segments);
-  const [selectedId, setSelectedId] = useState(
-    project.segments.find((s) => s.status !== "approved")?.id ??
-      project.segments[0].id
+export function Workspace({
+  project,
+  product,
+  speakers,
+  glossary,
+  contexts,
+}: {
+  project: Project;
+  product: Product;
+  speakers: Speaker[];
+  glossary: GlossaryTerm[];
+  contexts: ContextNote[];
+}) {
+  const speakerById = useMemo(
+    () => Object.fromEntries(speakers.map((s) => [s.id, s])),
+    [speakers]
   );
+
+  const [segments, setSegments] = useState<Segment[]>(project.segments);
+  const [selectedId, setSelectedId] = useState(segments[0].id);
+  const [activeLangs, setActiveLangs] = useState<string[]>(product.targetLangs);
   const [loading, setLoading] = useState(false);
-  const [alt, setAlt] = useState<string | null>(null);
-  const [demo, setDemo] = useState(false);
-  const [filter, setFilter] = useState<"all" | "todo" | "review">("all");
+  const [demoNote, setDemoNote] = useState<string | null>(null);
+  const [filter, setFilter] = useState<"all" | "todo">("all");
 
   const selected = segments.find((s) => s.id === selectedId)!;
   const speaker = selected.speakerId ? speakerById[selected.speakerId] : undefined;
-  const terms = useMemo(() => matchedTerms(selected.source), [selected.source]);
-  const qa = useMemo(() => runQA(selected, terms), [selected, terms]);
+  const context = selected.contextId
+    ? contexts.find((c) => c.id === selected.contextId)
+    : undefined;
+
+  const matched = useMemo(
+    () =>
+      glossary.filter((g) =>
+        new RegExp(`\\b${g.source.toLowerCase()}\\b`).test(selected.source.toLowerCase())
+      ),
+    [glossary, selected.source]
+  );
 
   const filtered = segments.filter((s) => {
     if (filter === "todo")
-      return s.status === "untranslated" || s.status === "rejected";
-    if (filter === "review") return s.status === "in_review";
+      return product.targetLangs.some((l) => {
+        const st = s.translations[l]?.status ?? "untranslated";
+        return st === "untranslated" || st === "rejected";
+      });
     return true;
   });
 
-  function update(id: string, patch: Partial<Segment>) {
-    setSegments((prev) => prev.map((s) => (s.id === id ? { ...s, ...patch } : s)));
+  function patchLocal(segId: string, lang: string, patch: Partial<{ text: string; status: SegmentStatus }>) {
+    setSegments((prev) =>
+      prev.map((s) => {
+        if (s.id !== segId) return s;
+        const cur = s.translations[lang] ?? { text: "", status: "untranslated" as SegmentStatus };
+        return { ...s, translations: { ...s.translations, [lang]: { ...cur, ...patch } } };
+      })
+    );
   }
 
-  async function aiTranslate() {
+  function persist(segId: string, lang: string, patch: Partial<{ text: string; status: SegmentStatus }>) {
+    fetch(`/api/segments/${segId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ lang, ...patch }),
+    }).catch(() => {});
+  }
+
+  function setText(lang: string, text: string) {
+    patchLocal(selected.id, lang, { text });
+  }
+  function commitText(lang: string) {
+    persist(selected.id, lang, { text: selected.translations[lang]?.text ?? "" });
+  }
+  function setStatus(lang: string, status: SegmentStatus) {
+    patchLocal(selected.id, lang, { status });
+    persist(selected.id, lang, { status });
+  }
+
+  function toggleLang(code: string) {
+    setActiveLangs((prev) =>
+      prev.includes(code)
+        ? prev.length > 1
+          ? prev.filter((c) => c !== code)
+          : prev
+        : [...prev, code]
+    );
+  }
+
+  async function aiTranslateAll() {
     setLoading(true);
-    setAlt(null);
+    setDemoNote(null);
     try {
       const res = await fetch("/api/translate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          source: selected.source,
-          sourceLang: project.sourceLang,
-          targetLang: project.targetLang,
-          scene: selected.scene,
-          speaker: speaker
-            ? {
-                name: speaker.name,
-                tone: speaker.tone,
-                register: speaker.register,
-                persona: speaker.persona,
-              }
-            : null,
-          glossary: terms.map((g) => ({
-            source: g.source,
-            target: g.target,
-            dnt: g.dnt,
-          })),
+          projectId: project.id,
+          segmentId: selected.id,
+          targetLangs: activeLangs,
         }),
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
-      setDemo(!!data.demo);
-      update(selected.id, { target: data.translation, status: "ai_draft" });
-      if (data.alternative) setAlt(data.alternative);
+      let demo = false;
+      for (const lang of Object.keys(data.results)) {
+        const r = data.results[lang];
+        if (r.demo) demo = true;
+        patchLocal(selected.id, lang, { text: r.translation, status: "ai_draft" });
+        persist(selected.id, lang, { text: r.translation, status: "ai_draft" });
+      }
+      if (demo)
+        setDemoNote(
+          `데모 모드 — ${engineMap[product.engine].label} 키(${engineMap[product.engine].envKey}) 설정 시 실제 번역`
+        );
     } catch (e) {
-      update(selected.id, {
-        target: `[오류] ${e instanceof Error ? e.message : "번역 실패"}`,
-      });
+      setDemoNote(e instanceof Error ? e.message : "번역 실패");
     } finally {
       setLoading(false);
     }
   }
 
-  const done = segments.filter((s) => s.status === "approved").length;
+  const approvedCount = segments.reduce(
+    (n, s) => n + product.targetLangs.filter((l) => s.translations[l]?.status === "approved").length,
+    0
+  );
+  const totalCells = segments.length * product.targetLangs.length;
 
   return (
     <>
       {/* Top bar */}
-      <header className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-line bg-bg/85 px-6 py-3 backdrop-blur">
-        <div className="min-w-0">
-          <div className="font-mono text-[11px] uppercase tracking-wider text-faint">
-            <Link href="/" className="hover:text-ink">
-              대시보드
-            </Link>{" "}
-            / {project.sourceLang} → {project.targetLang}
+      <header className="sticky top-0 z-10 border-b border-line bg-bg/90 px-6 py-3 backdrop-blur">
+        <div className="flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <div className="font-mono text-[11px] uppercase tracking-wider text-faint">
+              <Link href="/" className="hover:text-ink">대시보드</Link> / {product.name}
+            </div>
+            <h1 className="truncate text-[18px] font-bold tracking-tight">{project.name}</h1>
           </div>
-          <h1 className="truncate text-[18px] font-bold tracking-tight">
-            {project.name}
-          </h1>
+          <div className="flex items-center gap-3">
+            <span className="rounded-md bg-indigo-soft px-2 py-1 font-mono text-[11px] font-semibold text-indigo-deep">
+              {engineMap[product.engine].label} · {modelLabel(product.engine, product.model)}
+            </span>
+            <div className="tnums hidden text-[12px] text-muted md:block">
+              승인 {approvedCount}/{totalCells}
+            </div>
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="tnums hidden text-[12px] text-muted sm:block">
-            승인 {done}/{segments.length}
-          </div>
-          <div className="h-1.5 w-28 overflow-hidden rounded-full bg-line2">
-            <div
-              className="h-full bg-ok"
-              style={{ width: `${(done / segments.length) * 100}%` }}
-            />
-          </div>
+        {/* language toggles */}
+        <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+          <span className="mr-1 text-[11px] font-semibold uppercase tracking-wide text-faint">
+            원어 {langLabel(product.sourceLang)} →
+          </span>
+          {product.targetLangs.map((code) => {
+            const on = activeLangs.includes(code);
+            return (
+              <button
+                key={code}
+                onClick={() => toggleLang(code)}
+                className={`rounded-full border px-2.5 py-0.5 text-[12px] font-semibold transition-colors ${
+                  on
+                    ? "border-indigo bg-indigo-soft text-indigo-deep"
+                    : "border-line text-faint hover:bg-line2"
+                }`}
+              >
+                {langLabel(code)}
+              </button>
+            );
+          })}
+          <Link
+            href={`/products/${product.id}`}
+            className="ml-1 text-[12px] font-medium text-muted underline-offset-2 hover:text-indigo hover:underline"
+          >
+            언어 관리
+          </Link>
         </div>
       </header>
 
-      {/* 3-column workspace */}
-      <div className="grid flex-1 grid-cols-1 lg:grid-cols-[20rem_1fr_19rem]">
+      <div className="grid flex-1 grid-cols-1 lg:grid-cols-[19rem_1fr_18rem]">
         {/* Segment list */}
         <div className="border-r border-line bg-panel2">
           <div className="flex items-center gap-1 border-b border-line px-3 py-2.5">
-            {(["all", "todo", "review"] as const).map((f) => (
+            {(["all", "todo"] as const).map((f) => (
               <button
                 key={f}
                 onClick={() => setFilter(f)}
                 className={`rounded-md px-2.5 py-1 text-[12px] font-medium transition-colors ${
-                  filter === f
-                    ? "bg-indigo-soft text-indigo-deep"
-                    : "text-muted hover:bg-line2"
+                  filter === f ? "bg-indigo-soft text-indigo-deep" : "text-muted hover:bg-line2"
                 }`}
               >
-                {f === "all" ? "전체" : f === "todo" ? "할 일" : "감수"}
+                {f === "all" ? "전체" : "미완료"}
               </button>
             ))}
-            <span className="tnums ml-auto font-mono text-[11px] text-faint">
-              {filtered.length}
-            </span>
+            <span className="tnums ml-auto font-mono text-[11px] text-faint">{filtered.length}</span>
           </div>
-          <div className="max-h-[calc(100vh-7.5rem)] overflow-y-auto p-2">
+          <div className="max-h-[calc(100vh-9.5rem)] overflow-y-auto p-2">
             {filtered.map((s) => {
               const sp = s.speakerId ? speakerById[s.speakerId] : undefined;
               const active = s.id === selectedId;
               return (
                 <button
                   key={s.id}
-                  onClick={() => {
-                    setSelectedId(s.id);
-                    setAlt(null);
-                  }}
+                  onClick={() => setSelectedId(s.id)}
                   className={`mb-1.5 w-full rounded-lg border px-3 py-2.5 text-left transition-all ${
-                    active
-                      ? "border-indigo bg-panel shadow-focus"
-                      : "border-line bg-panel hover:border-faint"
+                    active ? "border-indigo bg-panel shadow-focus" : "border-line bg-panel hover:border-faint"
                   }`}
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="truncate text-[10px] font-bold uppercase tracking-wide text-muted">
                       {sp ? sp.name : "내레이션"}
                     </span>
-                    <StatusBadge status={s.status} />
+                    <span className="font-mono text-[10px] text-faint">{s.key}</span>
                   </div>
-                  <div className="mt-1 truncate font-mono text-[11.5px] text-faint">
-                    {s.source}
-                  </div>
-                  <div className="truncate text-[13px] text-ink">
-                    {s.target || "—"}
+                  <div className="mt-1 truncate font-mono text-[11.5px] text-faint">{s.source}</div>
+                  <div className="mt-1.5 flex gap-1">
+                    {product.targetLangs.map((l) => (
+                      <span
+                        key={l}
+                        title={langLabel(l)}
+                        className={`h-1.5 w-4 rounded-full ${dotColor[s.translations[l]?.status ?? "untranslated"]}`}
+                      />
+                    ))}
                   </div>
                 </button>
               );
@@ -230,143 +292,146 @@ export function Workspace({ project }: { project: Project }) {
         {/* Editor */}
         <div className="min-w-0 px-7 py-6">
           <div className="mb-1 flex items-center gap-2 font-mono text-[11px] uppercase tracking-wide text-faint">
-            <span>{selected.key}</span>
-            <span>·</span>
-            <span className="truncate">{selected.scene}</span>
+            <span>{selected.key}</span><span>·</span><span className="truncate">{selected.scene}</span>
           </div>
           <h2 className="text-[17px] font-bold tracking-tight">
             {speaker ? `${speaker.name} · ${speaker.role}` : "내레이션"}
           </h2>
 
-          <div className="mt-5 text-[10px] font-bold uppercase tracking-wide text-faint">
-            원문 — {project.sourceLang}
+          <div className="mt-4 text-[10px] font-bold uppercase tracking-wide text-faint">
+            원문 — {langLabel(product.sourceLang)}
           </div>
           <div className="mt-1.5 rounded-lg bg-line2 px-4 py-3 font-mono text-[13.5px] text-muted">
             {selected.source}
           </div>
 
-          <div className="mt-5 flex items-center justify-between">
-            <span className="text-[10px] font-bold uppercase tracking-wide text-faint">
-              번역 — {project.targetLang}
+          <div className="mt-4 flex items-center justify-between">
+            <span className="text-[12px] font-semibold text-muted">
+              {activeLangs.length}개 언어 동시 번역
             </span>
             <button
-              onClick={aiTranslate}
+              onClick={aiTranslateAll}
               disabled={loading}
-              className="flex items-center gap-1.5 rounded-lg bg-indigo px-3 py-1.5 text-[12.5px] font-semibold text-white transition-colors hover:bg-indigo-deep disabled:opacity-60"
+              className="flex items-center gap-1.5 rounded-lg bg-indigo px-3.5 py-2 text-[12.5px] font-semibold text-white transition-colors hover:bg-indigo-deep disabled:opacity-60"
             >
               {loading ? (
                 <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-white/40 border-t-white" />
               ) : (
                 <span>✦</span>
               )}
-              {loading ? "번역 중…" : "AI 번역"}
+              {loading ? "번역 중…" : "AI 일괄 번역"}
             </button>
           </div>
-          <textarea
-            value={selected.target}
-            onChange={(e) => update(selected.id, { target: e.target.value })}
-            placeholder="여기에 번역을 입력하거나 AI 번역을 실행하세요…"
-            rows={4}
-            className="mt-1.5 w-full resize-none rounded-lg border-2 border-indigo bg-panel px-4 py-3 text-[15px] leading-relaxed text-ink outline-none placeholder:text-faint"
-          />
-
-          {demo && (
-            <div className="mt-2 rounded-md bg-warn-soft px-3 py-1.5 text-[12px] text-warn">
-              데모 모드입니다 — <span className="font-mono">ANTHROPIC_API_KEY</span>{" "}
-              설정 시 실제 Claude 번역이 적용됩니다.
-            </div>
-          )}
-          {alt && (
-            <div className="mt-2 rounded-md bg-indigo-soft px-3 py-2 text-[13px] text-indigo-deep">
-              <span className="font-semibold">대안 ·</span> {alt}
-            </div>
+          {demoNote && (
+            <div className="mt-2 rounded-md bg-warn-soft px-3 py-1.5 text-[12px] text-warn">{demoNote}</div>
           )}
 
-          {/* status actions */}
-          <div className="mt-6 flex flex-wrap items-center gap-2">
-            <span className="mr-1 text-[12px] font-medium text-muted">상태:</span>
-            {(["translating", "translated", "in_review", "approved", "rejected"] as const).map(
-              (st) => (
-                <button
-                  key={st}
-                  onClick={() => update(selected.id, { status: st })}
-                  className={`rounded-lg border px-3 py-1.5 text-[12.5px] font-semibold transition-colors ${
-                    selected.status === st
-                      ? "border-indigo bg-indigo-soft text-indigo-deep"
-                      : "border-line text-muted hover:bg-line2"
-                  }`}
-                >
-                  {STATUS_META[st].label}
-                </button>
-              )
-            )}
+          {/* per-language editors */}
+          <div className="mt-3 space-y-4">
+            {activeLangs.map((lang) => {
+              const t = selected.translations[lang] ?? { text: "", status: "untranslated" as SegmentStatus };
+              const limit = selected.charLimits?.[lang];
+              const checks = runQA(t.text, speaker, lang, limit);
+              return (
+                <div key={lang} className="rounded-xl border border-line bg-panel p-4 shadow-card">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[13px] font-bold">{langLabel(lang)}</span>
+                    <StatusBadge status={t.status} />
+                  </div>
+                  <textarea
+                    value={t.text}
+                    onChange={(e) => setText(lang, e.target.value)}
+                    onBlur={() => commitText(lang)}
+                    placeholder="번역 입력 또는 AI 일괄 번역 실행…"
+                    rows={2}
+                    className="mt-2 w-full resize-none rounded-lg border-2 border-line bg-panel px-3 py-2 text-[14.5px] leading-relaxed text-ink outline-none focus:border-indigo placeholder:text-faint"
+                  />
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                    {(["translating", "translated", "in_review", "approved", "rejected"] as const).map((st) => (
+                      <button
+                        key={st}
+                        onClick={() => setStatus(lang, st)}
+                        className={`rounded-md border px-2 py-1 text-[11.5px] font-semibold transition-colors ${
+                          t.status === st
+                            ? "border-indigo bg-indigo-soft text-indigo-deep"
+                            : "border-line text-muted hover:bg-line2"
+                        }`}
+                      >
+                        {STATUS_META[st].label}
+                      </button>
+                    ))}
+                    <div className="ml-auto flex flex-wrap items-center gap-2">
+                      {checks.map((c) => (
+                        <span
+                          key={c.label}
+                          className={`flex items-center gap-1 text-[11px] ${c.ok ? "text-ok" : "text-bad"}`}
+                          title={c.detail}
+                        >
+                          <span className={`grid h-3.5 w-3.5 place-items-center rounded-full text-[9px] font-bold text-white ${c.ok ? "bg-ok" : "bg-bad"}`}>
+                            {c.ok ? "✓" : "!"}
+                          </span>
+                          {c.label}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
         {/* Context panel */}
         <div className="border-l border-line bg-panel2 px-4 py-5">
-          <div className="text-[11px] font-bold uppercase tracking-wide text-faint">
-            컨텍스트
-          </div>
+          <div className="text-[11px] font-bold uppercase tracking-wide text-faint">컨텍스트</div>
 
-          {/* speaker */}
           <div className="mt-3 rounded-xl border border-line bg-panel p-3.5">
-            <div className="text-[14px] font-bold">
-              {speaker ? speaker.name : "내레이션"}
-            </div>
-            <div className="mt-0.5 text-[12px] text-muted">
-              {speaker ? speaker.persona : "3인칭 서술 · 문어체"}
-            </div>
-            <span className="mt-2 inline-block rounded-md bg-indigo-soft px-2 py-0.5 text-[11px] font-semibold text-indigo-deep">
-              {speaker ? speaker.tone : "문어체 · 묘사"}
-            </span>
-          </div>
-
-          {/* glossary */}
-          <div className="mt-5 text-[10px] font-bold uppercase tracking-wide text-faint">
-            적용 용어
-          </div>
-          <div className="mt-2 space-y-0.5">
-            {terms.length === 0 && (
-              <div className="text-[12.5px] text-faint">매칭 용어 없음</div>
+            <div className="text-[14px] font-bold">{speaker ? speaker.name : "내레이션"}</div>
+            <div className="mt-0.5 text-[12px] text-muted">{speaker ? speaker.persona : "3인칭 서술 · 문어체"}</div>
+            {speaker && (
+              <div className="mt-2 space-y-1">
+                {activeLangs.map((l) => (
+                  <div key={l} className="flex items-center justify-between text-[11.5px]">
+                    <span className="text-faint">{langLabel(l)}</span>
+                    <span className="font-semibold text-indigo-deep">
+                      {speaker.tones[l]?.tone ?? "—"}
+                    </span>
+                  </div>
+                ))}
+              </div>
             )}
-            {terms.map((g) => (
-              <div
-                key={g.id}
-                className="flex items-center justify-between border-b border-line2 py-1.5 text-[12.5px]"
-              >
-                <span className="font-mono text-muted">{g.source}</span>
-                <span className="font-semibold text-ink">
-                  {g.target}
-                  {g.dnt && (
-                    <span className="ml-1 text-[10px] font-bold text-warn">DNT</span>
-                  )}
-                </span>
+          </div>
+
+          <div className="mt-5 text-[10px] font-bold uppercase tracking-wide text-faint">적용 용어</div>
+          <div className="mt-2 space-y-2">
+            {matched.length === 0 && <div className="text-[12.5px] text-faint">매칭 용어 없음</div>}
+            {matched.map((g) => (
+              <div key={g.id} className="rounded-lg border border-line2 bg-panel p-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-[12px] font-semibold text-ink">{g.source}</span>
+                  {g.dnt && <span className="text-[10px] font-bold text-warn">DNT</span>}
+                </div>
+                <div className="mt-1 space-y-0.5">
+                  {activeLangs.map((l) => (
+                    <div key={l} className="flex items-center justify-between text-[11.5px]">
+                      <span className="text-faint">{langLabel(l)}</span>
+                      <span className="text-ink">{g.targets[l] || "—"}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             ))}
           </div>
 
-          {/* QA */}
-          <div className="mt-5 text-[10px] font-bold uppercase tracking-wide text-faint">
-            자동 QA
-          </div>
-          <div className="mt-2 space-y-1.5">
-            {qa.map((c) => (
-              <div key={c.label} className="flex items-start gap-2 text-[12.5px]">
-                <span
-                  className={`mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded-full text-[10px] font-bold text-white ${
-                    c.ok ? "bg-ok" : "bg-bad"
-                  }`}
-                >
-                  {c.ok ? "✓" : "!"}
-                </span>
-                <span>
-                  <span className="font-semibold text-ink">{c.label}</span>{" "}
-                  <span className="text-muted">— {c.detail}</span>
-                </span>
+          {context && (
+            <>
+              <div className="mt-5 text-[10px] font-bold uppercase tracking-wide text-faint">맥락</div>
+              <div className="mt-2 rounded-lg border border-line2 bg-panel p-2.5 text-[12px] text-muted">
+                <div className="font-semibold text-ink">{context.scene}</div>
+                <p className="mt-1">{context.note}</p>
               </div>
-            ))}
-          </div>
+            </>
+          )}
         </div>
       </div>
     </>

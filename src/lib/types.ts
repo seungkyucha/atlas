@@ -1,3 +1,5 @@
+import { EngineId } from "./config";
+
 export type SegmentStatus =
   | "untranslated"
   | "ai_draft"
@@ -7,46 +9,69 @@ export type SegmentStatus =
   | "rejected"
   | "approved";
 
+/** Per-language tone settings for a speaker. */
+export interface SpeakerTone {
+  tone: string; // e.g. "반말 · 단호"
+  register: string; // free-form: 반말 / 존댓말 / casual / formal ...
+  sampleLine?: string;
+}
+
 export interface Speaker {
   id: string;
+  productId: string;
   name: string;
   role: string;
   persona: string;
-  /** e.g. "반말 · 단호", "하게체 · 능청" */
-  tone: string;
-  /** honorific register: casual / polite / formal */
-  register: "반말" | "존댓말" | "하게체" | "나레이션";
-  sampleLine?: string;
+  /** keyed by target language code */
+  tones: Record<string, SpeakerTone>;
 }
 
 export interface GlossaryTerm {
   id: string;
+  productId: string;
   source: string;
-  target: string;
-  pos: string; // part of speech / category
+  pos: string;
   domain: string;
-  dnt: boolean; // do-not-translate (keep as-is / proper noun)
+  dnt: boolean;
   note?: string;
   status: "proposed" | "approved";
+  /** translation per target language code */
+  targets: Record<string, string>;
+}
+
+export interface ContextNote {
+  id: string;
+  productId: string;
+  scene: string;
+  arc: string;
+  note: string;
+  /** optional tone/translation guide per target language */
+  guides: Record<string, string>;
+}
+
+export interface Translation {
+  text: string;
+  status: SegmentStatus;
 }
 
 export interface Segment {
   id: string;
-  key: string; // string id like #0142
-  speakerId: string | null; // null = narration
+  projectId: string;
+  key: string;
+  speakerId: string | null;
   scene: string;
+  contextId?: string | null;
   source: string;
-  target: string;
-  status: SegmentStatus;
-  charLimit?: number;
+  /** keyed by target language code */
+  translations: Record<string, Translation>;
+  /** per-language character limit */
+  charLimits?: Record<string, number>;
 }
 
 export interface Project {
   id: string;
   productId: string;
   name: string;
-  sourceLang: string;
-  targetLang: string;
   segments: Segment[];
 }
 
@@ -55,4 +80,8 @@ export interface Product {
   studio: string;
   name: string;
   genre: string;
+  sourceLang: string; // language code
+  targetLangs: string[]; // language codes
+  engine: EngineId;
+  model: string;
 }

@@ -14,7 +14,12 @@
       "Bash(npm install *)",
       "Bash(node -e \"const p=require\\('./package.json'\\);console.log\\('next',p.dependencies.next\\);console.log\\(JSON.stringify\\(p.devDependencies,null,0\\)\\)\")",
       "Bash(npm ls *)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(export RAILWAY_API_TOKEN=\"f050536a-a93c-4f62-8fc2-773b27660f42\")",
+      "Bash(RAILWAY_TOKEN=\"f050536a-a93c-4f62-8fc2-773b27660f42\" railway whoami)",
+      "Bash(RAILWAY_TOKEN=\"f050536a-a93c-4f62-8fc2-773b27660f42\" railway status)",
+      "Bash(curl -s -X POST https://backboard.railway.app/graphql/v2 -H 'Content-Type: application/json' -H 'Authorization: Bearer f050536a-a93c-4f62-8fc2-773b27660f42' -d '{\"query\":\"query { me { id email } }\"}')",
+      "Bash(curl -s -X POST https://backboard.railway.app/graphql/v2 -H 'Content-Type: application/json' -H 'Authorization: Bearer f050536a-a93c-4f62-8fc2-773b27660f42' -d '{\"query\":\"query { projects\\(first: 3\\) { edges { node { id name team { id name } } } } }\"}')"
     ]
   }
 }
