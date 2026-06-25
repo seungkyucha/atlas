@@ -1,35 +1,39 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/store";
+import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { GlossaryTerm } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function PATCH(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
-  const term = db.glossary.find((g) => g.id === params.id);
+export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+  const term = await prisma.glossaryTerm.findUnique({ where: { id: params.id } });
   if (!term) return NextResponse.json({ error: "not found" }, { status: 404 });
 
   const body = (await req.json()) as Partial<GlossaryTerm>;
-  if (body.source !== undefined) term.source = body.source;
-  if (body.pos !== undefined) term.pos = body.pos;
-  if (body.domain !== undefined) term.domain = body.domain;
-  if (body.dnt !== undefined) term.dnt = body.dnt;
-  if (body.note !== undefined) term.note = body.note;
-  if (body.status !== undefined) term.status = body.status;
-  if (body.targets) term.targets = { ...term.targets, ...body.targets };
+  const data: Prisma.GlossaryTermUpdateInput = {};
+  if (body.source !== undefined) data.source = body.source;
+  if (body.pos !== undefined) data.pos = body.pos;
+  if (body.domain !== undefined) data.domain = body.domain;
+  if (body.dnt !== undefined) data.dnt = body.dnt;
+  if (body.note !== undefined) data.note = body.note;
+  if (body.status !== undefined) data.status = body.status;
+  if (body.targets) {
+    data.targets = {
+      ...((term.targets as unknown as Record<string, string>) ?? {}),
+      ...body.targets,
+    } as unknown as Prisma.InputJsonValue;
+  }
 
-  return NextResponse.json(term);
+  const updated = await prisma.glossaryTerm.update({ where: { id: params.id }, data });
+  return NextResponse.json(updated);
 }
 
-export async function DELETE(
-  _req: Request,
-  { params }: { params: { id: string } }
-) {
-  const idx = db.glossary.findIndex((g) => g.id === params.id);
-  if (idx === -1) return NextResponse.json({ error: "not found" }, { status: 404 });
-  db.glossary.splice(idx, 1);
-  return NextResponse.json({ ok: true });
+export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
+  try {
+    await prisma.glossaryTerm.delete({ where: { id: params.id } });
+    return NextResponse.json({ ok: true });
+  } catch {
+    return NextResponse.json({ error: "not found" }, { status: 404 });
+  }
 }

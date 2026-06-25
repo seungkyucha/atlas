@@ -1,12 +1,8 @@
 import { NextResponse } from "next/server";
 import { runEngine, EngineInput } from "@/lib/engines";
-import {
-  getProject,
-  getProduct,
-  getSpeaker,
-  productGlossary,
-  db,
-} from "@/lib/store";
+import { prisma } from "@/lib/prisma";
+import { EngineId } from "@/lib/config";
+import { SpeakerTone } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,35 +15,35 @@ export async function POST(req: Request) {
       targetLangs?: string[];
     };
 
-    const project = getProject(projectId);
-    const segment = project?.segments.find((s) => s.id === segmentId);
-    if (!project || !segment) {
+    const segment = await prisma.segment.findUnique({ where: { id: segmentId } });
+    if (!segment || segment.projectId !== projectId) {
       return NextResponse.json({ error: "segment not found" }, { status: 404 });
     }
-    const product = getProduct(project.productId);
-    if (!product) {
-      return NextResponse.json({ error: "product not found" }, { status: 404 });
-    }
+    const project = await prisma.project.findUnique({ where: { id: projectId } });
+    const product = project
+      ? await prisma.product.findUnique({ where: { id: project.productId } })
+      : null;
+    if (!product) return NextResponse.json({ error: "product not found" }, { status: 404 });
 
-    const langs = (targetLangs && targetLangs.length
-      ? targetLangs
-      : product.targetLangs
-    ).filter((l) => product.targetLangs.includes(l));
+    const langs = (targetLangs?.length ? targetLangs : product.targetLangs).filter((l) =>
+      product.targetLangs.includes(l)
+    );
 
-    const speaker = getSpeaker(segment.speakerId);
+    const speaker = segment.speakerId
+      ? await prisma.speaker.findUnique({ where: { id: segment.speakerId } })
+      : null;
     const context = segment.contextId
-      ? db.contexts.find((c) => c.id === segment.contextId)
-      : undefined;
-
-    const matched = productGlossary(product.id).filter((g) =>
+      ? await prisma.contextNote.findUnique({ where: { id: segment.contextId } })
+      : null;
+    const glossary = await prisma.glossaryTerm.findMany({ where: { productId: product.id } });
+    const matched = glossary.filter((g) =>
       new RegExp(`\\b${g.source.toLowerCase()}\\b`).test(segment.source.toLowerCase())
     );
 
-    const results: Record<
-      string,
-      { translation: string; demo: boolean; engine: string; error?: string }
-    > = {};
+    const tones = (speaker?.tones as unknown as Record<string, SpeakerTone>) ?? {};
+    const guides = (context?.guides as unknown as Record<string, string>) ?? {};
 
+    const results: Record<string, { translation: string; demo: boolean; engine: string; error?: string }> = {};
     await Promise.all(
       langs.map(async (lang) => {
         const input: EngineInput = {
@@ -58,21 +54,21 @@ export async function POST(req: Request) {
             ? {
                 name: speaker.name,
                 persona: speaker.persona,
-                tone: speaker.tones[lang]?.tone ?? "",
-                register: speaker.tones[lang]?.register ?? "",
+                tone: tones[lang]?.tone ?? "",
+                register: tones[lang]?.register ?? "",
               }
             : null,
           scene: segment.scene,
-          contextGuide: context?.guides[lang],
+          contextGuide: guides[lang],
           glossary: matched
             .map((g) => ({
               source: g.source,
-              target: g.targets[lang] ?? "",
+              target: ((g.targets as unknown as Record<string, string>) ?? {})[lang] ?? "",
               dnt: g.dnt,
             }))
             .filter((g) => g.target || g.dnt),
         };
-        results[lang] = await runEngine(product.engine, product.model, input);
+        results[lang] = await runEngine(product.engine as EngineId, product.model, input);
       })
     );
 

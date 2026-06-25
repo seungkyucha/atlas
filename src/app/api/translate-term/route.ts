@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { runEngine } from "@/lib/engines";
-import { getProduct } from "@/lib/store";
+import { prisma } from "@/lib/prisma";
+import { EngineId } from "@/lib/config";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,7 +16,7 @@ export async function POST(req: Request) {
       pos?: string;
       targetLangs?: string[];
     };
-    const product = getProduct(productId);
+    const product = await prisma.product.findUnique({ where: { id: productId } });
     if (!product) return NextResponse.json({ error: "product not found" }, { status: 404 });
     if (!source) return NextResponse.json({ error: "source required" }, { status: 400 });
 
@@ -26,7 +27,7 @@ export async function POST(req: Request) {
     const results: Record<string, { translation: string; demo: boolean }> = {};
     await Promise.all(
       langs.map(async (lang) => {
-        const r = await runEngine(product.engine, product.model, {
+        const r = await runEngine(product.engine as EngineId, product.model, {
           source,
           sourceLang: product.sourceLang,
           targetLang: lang,

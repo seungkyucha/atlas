@@ -1,17 +1,13 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/store";
-import { SegmentStatus } from "@/lib/types";
+import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
+import { SegmentStatus, Translation } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function PATCH(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
-  const segment = db.projects
-    .flatMap((p) => p.segments)
-    .find((s) => s.id === params.id);
+export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+  const segment = await prisma.segment.findUnique({ where: { id: params.id } });
   if (!segment) return NextResponse.json({ error: "not found" }, { status: 404 });
 
   const { lang, text, status } = (await req.json()) as {
@@ -21,10 +17,16 @@ export async function PATCH(
   };
   if (!lang) return NextResponse.json({ error: "lang required" }, { status: 400 });
 
-  const cur = segment.translations[lang] ?? { text: "", status: "untranslated" };
-  segment.translations[lang] = {
+  const translations = { ...((segment.translations as unknown as Record<string, Translation>) ?? {}) };
+  const cur = translations[lang] ?? { text: "", status: "untranslated" as SegmentStatus };
+  translations[lang] = {
     text: text !== undefined ? text : cur.text,
     status: status !== undefined ? status : cur.status,
   };
-  return NextResponse.json(segment.translations[lang]);
+
+  await prisma.segment.update({
+    where: { id: params.id },
+    data: { translations: translations as unknown as Prisma.InputJsonValue },
+  });
+  return NextResponse.json(translations[lang]);
 }

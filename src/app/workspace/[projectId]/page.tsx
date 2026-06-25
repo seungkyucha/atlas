@@ -1,32 +1,38 @@
 import { notFound } from "next/navigation";
 import {
-  getProject,
+  getProjectWithSegments,
   getProduct,
   productSpeakers,
   productGlossary,
   productContexts,
-} from "@/lib/store";
+} from "@/lib/repo";
 import { Workspace } from "@/components/Workspace";
 
 export const dynamic = "force-dynamic";
 
-export default function WorkspacePage({
+export default async function WorkspacePage({
   params,
 }: {
   params: { projectId: string };
 }) {
-  const project = getProject(params.projectId);
+  const project = await getProjectWithSegments(params.projectId);
   if (!project) notFound();
-  const product = getProduct(project.productId);
+  const product = await getProduct(project.productId);
   if (!product) notFound();
+
+  const [speakers, glossary, contexts] = await Promise.all([
+    productSpeakers(product.id),
+    productGlossary(product.id),
+    productContexts(product.id),
+  ]);
 
   return (
     <Workspace
       project={project}
       product={product}
-      speakers={productSpeakers(product.id)}
-      glossary={productGlossary(product.id)}
-      contexts={productContexts(product.id)}
+      speakers={speakers}
+      glossary={glossary}
+      contexts={contexts}
     />
   );
 }

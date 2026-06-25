@@ -1,0 +1,91 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Product {
+  id          String         @id
+  studio      String
+  name        String
+  genre       String
+  sourceLang  String
+  targetLangs String[]
+  engine      String
+  model       String
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  projects    Project[]
+  speakers    Speaker[]
+  glossary    GlossaryTerm[]
+  contexts    ContextNote[]
+}
+
+model Project {
+  id        String    @id
+  product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId String
+  name      String
+  createdAt DateTime  @default(now())
+  segments  Segment[]
+}
+
+model Speaker {
+  id        String  @id
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId String
+  name      String
+  role      String
+  persona   String
+  tones     Json // { [lang]: { tone, register, sampleLine? } }
+}
+
+model GlossaryTerm {
+  id        String  @id
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId String
+  source    String
+  pos       String
+  domain    String
+  dnt       Boolean @default(false)
+  note      String?
+  status    String  @default("proposed")
+  targets   Json // { [lang]: string }
+}
+
+model ContextNote {
+  id        String  @id
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId String
+  scene     String
+  arc       String
+  note      String
+  guides    Json // { [lang]: string }
+}
+
+model Segment {
+  id           String   @id
+  project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId    String
+  key          String
+  speakerId    String?
+  scene        String
+  contextId    String?
+  source       String
+  translations Json // { [lang]: { text, status } }
+  charLimits   Json? // { [lang]: number }
+  order        Int      @default(0)
+}
+
+model AppUser {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  image     String?
+  role      String   @default("translator")
+  createdAt DateTime @default(now())
+  lastLogin DateTime @default(now())
+}

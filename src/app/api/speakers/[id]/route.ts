@@ -1,15 +1,13 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/store";
+import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { SpeakerTone } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function PATCH(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
-  const speaker = db.speakers.find((s) => s.id === params.id);
+export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+  const speaker = await prisma.speaker.findUnique({ where: { id: params.id } });
   if (!speaker) return NextResponse.json({ error: "not found" }, { status: 404 });
 
   const body = (await req.json()) as Partial<{
@@ -19,10 +17,17 @@ export async function PATCH(
     tones: Record<string, SpeakerTone>;
   }>;
 
-  if (body.name !== undefined) speaker.name = body.name;
-  if (body.role !== undefined) speaker.role = body.role;
-  if (body.persona !== undefined) speaker.persona = body.persona;
-  if (body.tones) speaker.tones = { ...speaker.tones, ...body.tones };
+  const data: Prisma.SpeakerUpdateInput = {};
+  if (body.name !== undefined) data.name = body.name;
+  if (body.role !== undefined) data.role = body.role;
+  if (body.persona !== undefined) data.persona = body.persona;
+  if (body.tones) {
+    data.tones = {
+      ...((speaker.tones as unknown as Record<string, SpeakerTone>) ?? {}),
+      ...body.tones,
+    } as unknown as Prisma.InputJsonValue;
+  }
 
-  return NextResponse.json(speaker);
+  const updated = await prisma.speaker.update({ where: { id: params.id }, data });
+  return NextResponse.json(updated);
 }

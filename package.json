@@ -4,16 +4,22 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "build": "prisma generate && next build",
+    "start": "prisma db push --skip-generate --accept-data-loss && node prisma/seed.mjs && next start",
+    "postinstall": "prisma generate",
     "lint": "next lint"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.105.0",
     "@google/generative-ai": "^0.21.0",
+    "@prisma/client": "^6.19.3",
     "next": "^14.2.35",
     "next-auth": "^4.24.14",
     "openai": "^4.104.0",
+    "prisma": "^6.19.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
