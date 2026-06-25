@@ -1,6 +1,7 @@
 import type { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
+import { prisma } from "./prisma";
 
 export const isGoogleConfigured = !!(
   process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
@@ -16,8 +17,6 @@ if (isGoogleConfigured) {
     })
   );
 } else {
-  // Fallback so the deployment is usable before Google OAuth is configured.
-  // Disabled automatically once GOOGLE_CLIENT_ID/SECRET are set.
   providers.push(
     CredentialsProvider({
       id: "guest",
@@ -35,4 +34,36 @@ export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
   pages: { signIn: "/login" },
   secret: process.env.NEXTAUTH_SECRET ?? "atlas-dev-secret-change-me",
+  callbacks: {
+    async jwt({ token, user }) {
+      // On sign-in, upsert the user record and attach role. First user = owner.
+      if (user?.email) {
+        try {
+          const count = await prisma.appUser.count();
+          const u = await prisma.appUser.upsert({
+            where: { email: user.email },
+            update: { name: user.name ?? undefined, image: user.image ?? undefined, lastLogin: new Date() },
+            create: {
+              email: user.email,
+              name: user.name ?? undefined,
+              image: user.image ?? undefined,
+              role: count === 0 ? "owner" : "translator",
+            },
+          });
+          token.role = u.role;
+          token.uid = u.id;
+        } catch {
+          token.role = token.role ?? "translator";
+        }
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (session.user) {
+        (session.user as { role?: string }).role = (token.role as string) ?? "translator";
+        (session.user as { id?: string }).id = (token.uid as string) ?? "";
+      }
+      return session;
+    },
+  },
 };

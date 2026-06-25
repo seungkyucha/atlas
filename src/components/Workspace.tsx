@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Project,
@@ -87,7 +87,83 @@ export function Workspace({
   const [demoNote, setDemoNote] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | "todo">("all");
 
+  interface Issue { id: string; lang: string; severity: string; category: string; comment: string; status: string; createdBy?: string | null }
+  const [issues, setIssues] = useState<Issue[]>([]);
+  const [tm, setTm] = useState<Record<string, { source: string; target: string; score: number }[]>>({});
+  const [issueDraft, setIssueDraft] = useState<{ lang: string; severity: string; comment: string } | null>(null);
+
   const selected = segments.find((s) => s.id === selectedId)!;
+
+  useEffect(() => {
+    setTm({});
+    setIssueDraft(null);
+    fetch(`/api/lqa?segmentId=${selectedId}`)
+      .then((r) => r.json())
+      .then((d) => setIssues(d.issues ?? []))
+      .catch(() => setIssues([]));
+  }, [selectedId]);
+
+  async function fetchTM(lang: string) {
+    const u = new URL("/api/tm", window.location.origin);
+    u.searchParams.set("productId", product.id);
+    u.searchParams.set("source", selected.source);
+    u.searchParams.set("lang", lang);
+    u.searchParams.set("excludeId", selected.id);
+    const d = await fetch(u.toString()).then((r) => r.json());
+    setTm((prev) => ({ ...prev, [lang]: d.matches ?? [] }));
+  }
+
+  async function addIssue() {
+    if (!issueDraft || !issueDraft.comment.trim()) return;
+    const res = await fetch("/api/lqa", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        projectId: project.id,
+        segmentId: selected.id,
+        lang: issueDraft.lang,
+        severity: issueDraft.severity,
+        comment: issueDraft.comment,
+      }),
+    });
+    if (res.ok) {
+      const issue = await res.json();
+      setIssues((p) => [issue, ...p]);
+      setIssueDraft(null);
+    }
+  }
+
+  async function resolveIssue(id: string) {
+    const cur = issues.find((i) => i.id === id);
+    const next = cur?.status === "open" ? "resolved" : "open";
+    setIssues((p) => p.map((i) => (i.id === id ? { ...i, status: next } : i)));
+    await fetch(`/api/lqa/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: next }),
+    });
+  }
+
+  async function addSegment() {
+    const res = await fetch("/api/segments", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ projectId: project.id, source: "새 원문 (수정하세요)", scene: selected?.scene ?? "" }),
+    });
+    if (res.ok) {
+      const seg = await res.json();
+      setSegments((p) => [...p, { ...seg, translations: seg.translations ?? {} }]);
+      setSelectedId(seg.id);
+    }
+  }
+
+  async function deleteSegment(id: string) {
+    if (!confirm("이 세그먼트를 삭제할까요?")) return;
+    const rest = segments.filter((s) => s.id !== id);
+    setSegments(rest);
+    if (selectedId === id && rest[0]) setSelectedId(rest[0].id);
+    await fetch(`/api/segments/${id}`, { method: "DELETE" });
+  }
   const speaker = selected.speakerId ? speakerById[selected.speakerId] : undefined;
   const context = selected.contextId
     ? contexts.find((c) => c.id === selected.contextId)
@@ -253,7 +329,14 @@ export function Workspace({
                 {f === "all" ? "전체" : "미완료"}
               </button>
             ))}
-            <span className="tnums ml-auto font-mono text-[11px] text-faint">{filtered.length}</span>
+            <button
+              onClick={addSegment}
+              title="세그먼트 추가"
+              className="ml-auto rounded-md border border-line px-2 py-0.5 text-[12px] font-semibold text-muted hover:bg-line2"
+            >
+              + 추가
+            </button>
+            <span className="tnums font-mono text-[11px] text-faint">{filtered.length}</span>
           </div>
           <div className="max-h-[calc(100vh-9.5rem)] overflow-y-auto p-2">
             {filtered.map((s) => {
@@ -294,9 +377,17 @@ export function Workspace({
           <div className="mb-1 flex items-center gap-2 font-mono text-[11px] uppercase tracking-wide text-faint">
             <span>{selected.key}</span><span>·</span><span className="truncate">{selected.scene}</span>
           </div>
-          <h2 className="text-[17px] font-bold tracking-tight">
-            {speaker ? `${speaker.name} · ${speaker.role}` : "내레이션"}
-          </h2>
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-[17px] font-bold tracking-tight">
+              {speaker ? `${speaker.name} · ${speaker.role}` : "내레이션"}
+            </h2>
+            <button
+              onClick={() => deleteSegment(selected.id)}
+              className="rounded-md border border-line px-2.5 py-1 text-[12px] font-semibold text-bad hover:bg-bad-soft"
+            >
+              세그먼트 삭제
+            </button>
+          </div>
 
           <div className="mt-4 text-[10px] font-bold uppercase tracking-wide text-faint">
             원문 — {langLabel(product.sourceLang)}
@@ -375,6 +466,65 @@ export function Workspace({
                       ))}
                     </div>
                   </div>
+                  {/* TM + LQA controls */}
+                  <div className="mt-2 flex items-center gap-2">
+                    <button onClick={() => fetchTM(lang)} className="rounded-md border border-line px-2 py-1 text-[11px] font-semibold text-muted hover:bg-line2">
+                      TM 검색
+                    </button>
+                    <button onClick={() => setIssueDraft({ lang, severity: "major", comment: "" })} className="rounded-md border border-line px-2 py-1 text-[11px] font-semibold text-muted hover:bg-line2">
+                      + LQA 이슈
+                    </button>
+                    {issues.filter((i) => i.lang === lang && i.status === "open").length > 0 && (
+                      <span className="rounded-full bg-bad-soft px-2 py-0.5 text-[10px] font-bold text-bad">
+                        이슈 {issues.filter((i) => i.lang === lang && i.status === "open").length}
+                      </span>
+                    )}
+                  </div>
+                  {tm[lang] && tm[lang].length > 0 && (
+                    <div className="mt-2 rounded-lg border border-line2 bg-panel2 p-2">
+                      <div className="mb-1 text-[10px] font-bold uppercase tracking-wide text-faint">번역 메모리</div>
+                      {tm[lang].map((m, i) => (
+                        <button
+                          key={i}
+                          onClick={() => { setText(lang, m.target); commitText(lang); }}
+                          className="flex w-full items-center gap-2 rounded px-1.5 py-1 text-left text-[12px] hover:bg-line2"
+                        >
+                          <span className="tnums shrink-0 rounded bg-ok-soft px-1.5 text-[10px] font-bold text-ok">{m.score}%</span>
+                          <span className="truncate text-ink">{m.target}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {issueDraft?.lang === lang && (
+                    <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg border border-line2 bg-panel2 p-2">
+                      <select
+                        value={issueDraft.severity}
+                        onChange={(e) => setIssueDraft({ ...issueDraft, severity: e.target.value })}
+                        className="rounded border border-line bg-panel px-2 py-1 text-[12px]"
+                      >
+                        <option value="critical">critical</option>
+                        <option value="major">major</option>
+                        <option value="minor">minor</option>
+                      </select>
+                      <input
+                        value={issueDraft.comment}
+                        onChange={(e) => setIssueDraft({ ...issueDraft, comment: e.target.value })}
+                        placeholder="이슈 내용"
+                        className="min-w-0 flex-1 rounded border border-line bg-panel px-2 py-1 text-[12.5px]"
+                      />
+                      <button onClick={addIssue} className="rounded bg-indigo px-2.5 py-1 text-[12px] font-semibold text-white">등록</button>
+                      <button onClick={() => setIssueDraft(null)} className="rounded px-2 py-1 text-[12px] text-muted">취소</button>
+                    </div>
+                  )}
+                  {issues.filter((i) => i.lang === lang).map((i) => (
+                    <div key={i.id} className={`mt-1.5 flex items-center gap-2 rounded-lg border border-line2 px-2 py-1.5 text-[12px] ${i.status === "resolved" ? "opacity-50" : ""}`}>
+                      <span className={`rounded-full px-1.5 text-[10px] font-bold ${i.severity === "critical" ? "bg-bad-soft text-bad" : i.severity === "major" ? "bg-warn-soft text-warn" : "bg-line2 text-muted"}`}>{i.severity}</span>
+                      <span className="min-w-0 flex-1 truncate text-ink">{i.comment}</span>
+                      <button onClick={() => resolveIssue(i.id)} className="shrink-0 text-[11px] font-semibold text-indigo">
+                        {i.status === "open" ? "해결" : "재오픈"}
+                      </button>
+                    </div>
+                  ))}
                 </div>
               );
             })}

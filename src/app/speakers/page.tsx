@@ -39,7 +39,7 @@ export default async function SpeakersPage({
         }
       />
       <main className="px-8 py-6">
-        <SpeakersEditor speakers={speakers} targetLangs={product.targetLangs} />
+        <SpeakersEditor productId={product.id} speakers={speakers} targetLangs={product.targetLangs} />
       </main>
     </>
   );

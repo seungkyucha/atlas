@@ -89,3 +89,19 @@ model AppUser {
   createdAt DateTime @default(now())
   lastLogin DateTime @default(now())
 }
+
+model LqaIssue {
+  id        String   @id @default(cuid())
+  projectId String
+  segmentId String
+  lang      String
+  severity  String   @default("major") // critical | major | minor
+  category  String   @default("accuracy") // accuracy | fluency | terminology | style | locale
+  comment   String
+  status    String   @default("open") // open | resolved
+  createdBy String?
+  createdAt DateTime @default(now())
+
+  @@index([projectId])
+  @@index([segmentId])
+}

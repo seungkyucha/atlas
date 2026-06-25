@@ -10,7 +10,10 @@ const nav = [
   { href: "/glossary", label: "용어집", icon: "▤" },
   { href: "/speakers", label: "화자 · 어투", icon: "◑" },
   { href: "/context", label: "내러티브 맥락", icon: "❏" },
+  { href: "/lqa", label: "LQA 이슈", icon: "⚑" },
+  { href: "/import", label: "문서 가져오기", icon: "↥" },
   { href: "/products", label: "프로덕트 설정", icon: "⚙" },
+  { href: "/members", label: "멤버 · 권한", icon: "◍" },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -65,6 +68,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </div>
               <div className="truncate text-[11.5px] text-muted">
                 {session.user.email}
+                {(session.user as { role?: string }).role
+                  ? ` · ${(session.user as { role?: string }).role}`
+                  : ""}
               </div>
               <button
                 onClick={() => signOut({ callbackUrl: "/login" })}

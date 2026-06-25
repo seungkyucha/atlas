@@ -25,3 +25,12 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   const updated = await prisma.contextNote.update({ where: { id: params.id }, data });
   return NextResponse.json(updated);
 }
+
+export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
+  try {
+    await prisma.contextNote.delete({ where: { id: params.id } });
+    return NextResponse.json({ ok: true });
+  } catch {
+    return NextResponse.json({ error: "not found" }, { status: 404 });
+  }
+}

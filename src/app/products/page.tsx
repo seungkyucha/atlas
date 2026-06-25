@@ -2,6 +2,7 @@ import Link from "next/link";
 import { PageHeader } from "@/components/PageHeader";
 import { getProducts, productProjects } from "@/lib/repo";
 import { langLabel, engineMap, modelLabel } from "@/lib/config";
+import { NewProduct } from "@/components/NewProduct";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +14,7 @@ export default async function ProductsPage() {
 
   return (
     <>
-      <PageHeader crumb="설정" title="프로덕트" subtitle="법인 · 스튜디오 · 프로덕트별 원어/지원언어 및 번역 엔진 관리" />
+      <PageHeader crumb="설정" title="프로덕트" subtitle="법인 · 스튜디오 · 프로덕트별 원어/지원언어 및 번역 엔진 관리" right={<NewProduct />} />
       <main className="px-8 py-6">
         <div className="grid gap-4 lg:grid-cols-2">
           {withCounts.map(({ p, n }) => (

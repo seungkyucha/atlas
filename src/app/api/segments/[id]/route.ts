@@ -30,3 +30,12 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   });
   return NextResponse.json(translations[lang]);
 }
+
+export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
+  try {
+    await prisma.segment.delete({ where: { id: params.id } });
+    return NextResponse.json({ ok: true });
+  } catch {
+    return NextResponse.json({ error: "not found" }, { status: 404 });
+  }
+}

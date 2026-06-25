@@ -39,7 +39,7 @@ export default async function ContextPage({
         }
       />
       <main className="px-8 py-6">
-        <ContextEditor contexts={contexts} targetLangs={product.targetLangs} />
+        <ContextEditor productId={product.id} contexts={contexts} targetLangs={product.targetLangs} />
       </main>
     </>
   );

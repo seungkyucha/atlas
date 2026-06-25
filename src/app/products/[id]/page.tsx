@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getProduct } from "@/lib/repo";
+import { getProduct, productProjects } from "@/lib/repo";
 import { ProductSettings } from "@/components/ProductSettings";
 
 export const dynamic = "force-dynamic";
@@ -11,5 +11,11 @@ export default async function ProductSettingsPage({
 }) {
   const product = await getProduct(params.id);
   if (!product) notFound();
-  return <ProductSettings product={product} />;
+  const projects = await productProjects(product.id);
+  return (
+    <ProductSettings
+      product={product}
+      projects={projects.map((p) => ({ id: p.id, name: p.name, segments: p.segments.length }))}
+    />
+  );
 }
