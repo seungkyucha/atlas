@@ -26,7 +26,7 @@ export default async function Dashboard() {
           if (st === "approved") approved++;
           if (st === "in_review") review++;
         }
-      return { product: p, projects, cells, approved, review, firstProject: projects[0] };
+      return { product: p, projects, cells, approved, review };
     })
   );
 
@@ -58,7 +58,7 @@ export default async function Dashboard() {
         <section className="mt-8">
           <h2 className="mb-3 text-[13px] font-bold uppercase tracking-wide text-faint">프로덕트</h2>
           <div className="grid gap-4 lg:grid-cols-2">
-            {perProduct.map(({ product: p, cells, approved, firstProject }) => {
+            {perProduct.map(({ product: p, cells, approved }) => {
               const pct = cells ? Math.round((approved / cells) * 100) : 0;
               return (
                 <div key={p.id} className="rounded-2xl border border-line bg-panel p-5 shadow-card">
@@ -85,12 +85,10 @@ export default async function Dashboard() {
                     <span className="tnums text-faint">{modelLabel(p.engine, p.model)}</span>
                   </div>
                   <div className="mt-4 flex gap-2">
-                    {firstProject && (
-                      <Link href={`/workspace/${firstProject.id}`} className="flex-1 rounded-lg bg-indigo px-3 py-2 text-center text-[13px] font-semibold text-white transition-colors hover:bg-indigo-deep">
-                        워크스페이스
-                      </Link>
-                    )}
-                    <Link href={`/products/${p.id}`} className="rounded-lg border border-line px-3 py-2 text-[13px] font-semibold text-muted transition-colors hover:bg-line2">
+                    <Link href={`/products/${p.id}`} className="flex-1 rounded-lg bg-indigo px-3 py-2 text-center text-[13px] font-semibold text-white transition-colors hover:bg-indigo-deep">
+                      열기
+                    </Link>
+                    <Link href={`/products/${p.id}/settings`} className="rounded-lg border border-line px-3 py-2 text-[13px] font-semibold text-muted transition-colors hover:bg-line2">
                       설정
                     </Link>
                   </div>

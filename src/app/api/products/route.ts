@@ -8,6 +8,14 @@ import { engineMap, EngineId } from "@/lib/config";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+export async function GET() {
+  const products = await prisma.product.findMany({
+    orderBy: { createdAt: "asc" },
+    select: { id: true, name: true },
+  });
+  return NextResponse.json({ products });
+}
+
 export async function POST(req: Request) {
   const denied = await guard("manager");
   if (denied) return denied;

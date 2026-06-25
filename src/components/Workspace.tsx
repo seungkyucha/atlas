@@ -271,7 +271,7 @@ export function Workspace({
         <div className="flex items-center justify-between gap-4">
           <div className="min-w-0">
             <div className="font-mono text-[11px] uppercase tracking-wider text-faint">
-              <Link href="/" className="hover:text-ink">대시보드</Link> / {product.name}
+              <Link href={`/products/${product.id}`} className="hover:text-ink">{product.name}</Link> / 워크스페이스
             </div>
             <h1 className="truncate text-[18px] font-bold tracking-tight">{project.name}</h1>
           </div>
@@ -306,7 +306,7 @@ export function Workspace({
             );
           })}
           <Link
-            href={`/products/${product.id}`}
+            href={`/products/${product.id}/settings`}
             className="ml-1 text-[12px] font-medium text-muted underline-offset-2 hover:text-indigo hover:underline"
           >
             언어 관리

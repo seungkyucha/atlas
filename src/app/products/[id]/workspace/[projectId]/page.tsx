@@ -13,10 +13,10 @@ export const dynamic = "force-dynamic";
 export default async function WorkspacePage({
   params,
 }: {
-  params: { projectId: string };
+  params: { id: string; projectId: string };
 }) {
   const project = await getProjectWithSegments(params.projectId);
-  if (!project) notFound();
+  if (!project || project.productId !== params.id) notFound();
   const product = await getProduct(project.productId);
   if (!product) notFound();
 

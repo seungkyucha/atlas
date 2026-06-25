@@ -222,7 +222,7 @@ export function ProductSettings({
           <div className="space-y-2">
             {projects.map((pr) => (
               <div key={pr.id} className="flex flex-wrap items-center gap-2 rounded-lg border border-line2 bg-panel2 px-3 py-2">
-                <Link href={`/workspace/${pr.id}`} className="font-semibold hover:text-indigo">{pr.name}</Link>
+                <Link href={`/products/${product.id}/workspace/${pr.id}`} className="font-semibold hover:text-indigo">{pr.name}</Link>
                 <span className="tnums text-[12px] text-faint">{pr.segments} 세그먼트</span>
                 <div className="ml-auto flex items-center gap-1.5">
                   <a href={`/api/projects/${pr.id}/export?format=csv`} className="rounded-md border border-line px-2 py-1 text-[11.5px] font-semibold text-muted hover:bg-line2">CSV</a>
@@ -255,8 +255,8 @@ export function ProductSettings({
         </section>
 
         <div className="mt-6">
-          <Link href="/products" className="text-[13px] text-muted hover:text-indigo">
-            ← 프로덕트 목록
+          <Link href={`/products/${product.id}`} className="text-[13px] text-muted hover:text-indigo">
+            ← 프로덕트 개요
           </Link>
         </div>
       </main>
