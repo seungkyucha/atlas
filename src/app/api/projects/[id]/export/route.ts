@@ -25,15 +25,24 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   const speakerName: Record<string, string> = Object.fromEntries(speakers.map((s) => [s.id, s.name]));
 
   const langs = product.targetLangs;
-  const headers = ["key", "speaker", "scene", `source(${product.sourceLang})`];
+  const headers = [
+    "namespace",
+    "key",
+    "speaker",
+    "description",
+    "max_length",
+    `source(${product.sourceLang})`,
+  ];
   for (const l of langs) headers.push(`${l}`, `${l}_status`);
 
   const rows = segments.map((s) => {
     const tr = (s.translations as unknown as Record<string, Translation>) ?? {};
     const row: string[] = [
+      s.namespace ?? "",
       s.key,
-      s.speakerId ? speakerName[s.speakerId] ?? "" : "narration",
-      s.scene,
+      s.speakerId ? speakerName[s.speakerId] ?? "" : "",
+      s.description ?? "",
+      s.maxLen != null ? String(s.maxLen) : "",
       s.source,
     ];
     for (const l of langs) {

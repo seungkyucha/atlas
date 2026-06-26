@@ -65,10 +65,13 @@ const mapSegment = (s: PSegment): Segment => ({
   id: s.id,
   projectId: s.projectId,
   key: s.key,
+  namespace: s.namespace ?? "",
   speakerId: s.speakerId ?? null,
   scene: s.scene,
   contextId: s.contextId ?? null,
   source: s.source,
+  description: s.description ?? null,
+  maxLen: s.maxLen ?? null,
   translations: (s.translations as unknown as Record<string, Translation>) ?? {},
   charLimits: (s.charLimits as unknown as Record<string, number>) ?? undefined,
 });

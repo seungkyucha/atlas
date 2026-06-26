@@ -70,16 +70,18 @@ async function main() {
   });
 
   const segs = [
-    { id: "s1", key: "#0140", speakerId: "narration", scene: "act II · sc.3 — 관문", contextId: "c1", source: "The gate groaned open.", translations: { ko: tr("성문이 삐걱이며 열렸다.", "approved"), ja: tr("城門がきしみながら開いた。", "approved"), "zh-CN": tr("城门吱呀作响地打开了。", "translated") } },
-    { id: "s2", key: "#0141", speakerId: "kaela", scene: "act II · sc.3 — 관문", contextId: "c1", source: "Halt. No one passes the Warden's gate.", translations: { ko: tr("멈춰. 수호자의 성문은 아무도 못 지나가.", "approved"), ja: tr("止まれ。守護者の城門は誰も通さない。", "in_review"), "zh-CN": tr("", "untranslated") }, charLimits: { ko: 24 } },
-    { id: "s3", key: "#0142", speakerId: "kaela", scene: "act II · sc.3 — 관문", contextId: "c1", source: "You won't get past me.", translations: { ko: tr("넌 날 못 지나가.", "in_review"), ja: tr("あんたは通さない。", "translated"), "zh-CN": tr("", "untranslated") }, charLimits: { ko: 16 } },
-    { id: "s4", key: "#0143", speakerId: "lyra", scene: "act II · sc.3 — 관문", contextId: "c1", source: "We don't want trouble. Let us through.", translations: { ko: tr("", "untranslated"), ja: tr("", "untranslated"), "zh-CN": tr("", "untranslated") } },
-    { id: "s5", key: "#0144", speakerId: "kaela", scene: "act II · sc.3 — 관문", contextId: "c1", source: "Trouble is all anyone brings to the Hollow.", translations: { ko: tr("", "untranslated"), ja: tr("", "untranslated"), "zh-CN": tr("", "untranslated") } },
-    { id: "s6", key: "#0145", speakerId: "merchant", scene: "act II · sc.4 — 시장", contextId: "c2", source: "Care for a bargain, traveler?", translations: { ko: tr("흥정 한번 해보겠나, 나그네?", "translating"), ja: tr("", "untranslated"), "zh-CN": tr("", "untranslated") } },
-    { id: "s7", key: "#0146", speakerId: "merchant", scene: "act II · sc.4 — 시장", contextId: "c2", source: "A soulstone, cheap. Only slightly cursed.", translations: { ko: tr("혼석일세, 싸게 주지. 저주는 아주 약간뿐이야.", "translated"), ja: tr("", "untranslated"), "zh-CN": tr("", "untranslated") } },
-    { id: "s8", key: "#0147", speakerId: "narration", scene: "act II · sc.4 — 시장", contextId: "c2", source: "The market hummed with quiet desperation.", translations: { ko: tr("", "untranslated"), ja: tr("", "untranslated"), "zh-CN": tr("", "untranslated") } },
-    { id: "s9", key: "#0148", speakerId: "lyra", scene: "act II · sc.5 — 야영", source: "Hold on a little longer. I can see the path.", translations: { ko: tr("조금만 더 버텨요. 길이 보여요.", "approved"), ja: tr("もう少しだけ。道が見えます。", "approved"), "zh-CN": tr("再坚持一下，我看到路了。", "approved") } },
-    { id: "s10", key: "#0149", speakerId: "kaela", scene: "act II · sc.5 — 야영", source: "Don't tell me to hold on.", translations: { ko: tr("버티라는 말 따위 하지 마.", "rejected"), ja: tr("", "untranslated"), "zh-CN": tr("", "untranslated") }, charLimits: { ko: 18 } },
+    { id: "s1", key: "NARR_GATE_001", namespace: "Narration/Act2", speakerId: "narration", scene: "act II · sc.3 — 관문", contextId: "c1", source: "The gate groaned open.", description: "장면 전환 내레이션", translations: { ko: tr("성문이 삐걱이며 열렸다.", "approved"), ja: tr("城門がきしみながら開いた。", "approved"), "zh-CN": tr("城门吱呀作响地打开了。", "translated") } },
+    { id: "s2", key: "DLG_KAELA_001", namespace: "Dialogue/Act2", speakerId: "kaela", scene: "act II · sc.3 — 관문", contextId: "c1", source: "Halt. No one passes the Warden's gate.", description: "카엘라 첫 등장 대사", maxLen: 24, translations: { ko: tr("멈춰. 수호자의 성문은 아무도 못 지나가.", "approved"), ja: tr("止まれ。守護者の城門は誰も通さない。", "in_review"), "zh-CN": tr("", "untranslated") } },
+    { id: "s3", key: "DLG_KAELA_002", namespace: "Dialogue/Act2", speakerId: "kaela", scene: "act II · sc.3 — 관문", contextId: "c1", source: "You won't get past me.", maxLen: 16, translations: { ko: tr("넌 날 못 지나가.", "in_review"), ja: tr("あんたは通さない。", "translated"), "zh-CN": tr("", "untranslated") } },
+    { id: "s4", key: "DLG_LYRA_001", namespace: "Dialogue/Act2", speakerId: "lyra", scene: "act II · sc.3 — 관문", contextId: "c1", source: "We don't want trouble. Let us through.", translations: { ko: tr("", "untranslated"), ja: tr("", "untranslated"), "zh-CN": tr("", "untranslated") } },
+    { id: "s5", key: "DLG_KAELA_003", namespace: "Dialogue/Act2", speakerId: "kaela", scene: "act II · sc.3 — 관문", contextId: "c1", source: "Trouble is all anyone brings to the Hollow.", translations: { ko: tr("", "untranslated"), ja: tr("", "untranslated"), "zh-CN": tr("", "untranslated") } },
+    { id: "s6", key: "DLG_MERCHANT_001", namespace: "Dialogue/Act2", speakerId: "merchant", scene: "act II · sc.4 — 시장", contextId: "c2", source: "Care for a bargain, traveler?", translations: { ko: tr("흥정 한번 해보겠나, 나그네?", "translating"), ja: tr("", "untranslated"), "zh-CN": tr("", "untranslated") } },
+    { id: "s7", key: "DLG_MERCHANT_002", namespace: "Dialogue/Act2", speakerId: "merchant", scene: "act II · sc.4 — 시장", contextId: "c2", source: "A soulstone, cheap. Only slightly cursed.", translations: { ko: tr("혼석일세, 싸게 주지. 저주는 아주 약간뿐이야.", "translated"), ja: tr("", "untranslated"), "zh-CN": tr("", "untranslated") } },
+    { id: "s8", key: "NARR_MARKET_001", namespace: "Narration/Act2", speakerId: "narration", scene: "act II · sc.4 — 시장", contextId: "c2", source: "The market hummed with quiet desperation.", translations: { ko: tr("", "untranslated"), ja: tr("", "untranslated"), "zh-CN": tr("", "untranslated") } },
+    { id: "s9", key: "DLG_LYRA_002", namespace: "Dialogue/Act2", speakerId: "lyra", scene: "act II · sc.5 — 야영", source: "Hold on a little longer. I can see the path.", translations: { ko: tr("조금만 더 버텨요. 길이 보여요.", "approved"), ja: tr("もう少しだけ。道が見えます。", "approved"), "zh-CN": tr("再坚持一下，我看到路了。", "approved") } },
+    { id: "s10", key: "DLG_KAELA_004", namespace: "Dialogue/Act2", speakerId: "kaela", scene: "act II · sc.5 — 야영", source: "Don't tell me to hold on.", maxLen: 18, translations: { ko: tr("버티라는 말 따위 하지 마.", "rejected"), ja: tr("", "untranslated"), "zh-CN": tr("", "untranslated") } },
+    { id: "s11", key: "UI_BTN_CONTINUE", namespace: "UI/Common", speakerId: null, scene: "UI", source: "Continue", description: "공용 버튼 라벨", maxLen: 10, translations: { ko: tr("계속", "approved"), ja: tr("つづける", "approved"), "zh-CN": tr("继续", "approved") } },
+    { id: "s12", key: "UI_INV_SOULSTONE_COUNT", namespace: "UI/Inventory", speakerId: null, scene: "UI", source: "You have {count} soulstones.", description: "{count} 는 숫자 플레이스홀더 — 반드시 유지", maxLen: 28, translations: { ko: tr("혼석 {count}개 보유", "translated"), ja: tr("", "untranslated"), "zh-CN": tr("", "untranslated") } },
   ];
   let order = 0;
   for (const s of segs) {
@@ -88,10 +90,13 @@ async function main() {
         id: s.id,
         projectId: "ember-main",
         key: s.key,
+        namespace: s.namespace ?? "",
         speakerId: s.speakerId,
         scene: s.scene,
         contextId: s.contextId ?? null,
         source: s.source,
+        description: s.description ?? null,
+        maxLen: s.maxLen ?? null,
         translations: s.translations,
         charLimits: s.charLimits ?? undefined,
         order: order++,

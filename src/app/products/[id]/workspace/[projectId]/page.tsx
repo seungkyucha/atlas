@@ -6,7 +6,7 @@ import {
   productGlossary,
   productContexts,
 } from "@/lib/repo";
-import { Workspace } from "@/components/Workspace";
+import { StringGrid } from "@/components/StringGrid";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +27,7 @@ export default async function WorkspacePage({
   ]);
 
   return (
-    <Workspace
+    <StringGrid
       project={project}
       product={product}
       speakers={speakers}

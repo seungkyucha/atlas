@@ -57,11 +57,14 @@ export interface Translation {
 export interface Segment {
   id: string;
   projectId: string;
-  key: string;
+  key: string; // StringBag key
+  namespace?: string;
   speakerId: string | null;
   scene: string;
   contextId?: string | null;
   source: string;
+  description?: string | null;
+  maxLen?: number | null;
   /** keyed by target language code */
   translations: Record<string, Translation>;
   /** per-language character limit */

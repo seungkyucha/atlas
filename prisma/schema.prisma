@@ -70,14 +70,20 @@ model Segment {
   id           String   @id
   project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   projectId    String
-  key          String
+  key          String // StringBag key, e.g. DLG_KAELA_0142 (referenced by game code)
+  namespace    String   @default("") // category / file grouping, e.g. UI, Dialogue/Act2
   speakerId    String?
   scene        String
   contextId    String?
   source       String
+  description  String? // translator note / context
+  maxLen       Int? // UI character limit (0/null = none)
   translations Json // { [lang]: { text, status } }
-  charLimits   Json? // { [lang]: number }
+  charLimits   Json? // { [lang]: number } (per-language override)
   order        Int      @default(0)
+
+  @@index([projectId])
+  @@index([projectId, key])
 }
 
 model AppUser {
