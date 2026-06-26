@@ -1,6 +1,7 @@
 import ExcelJS from "exceljs";
 import { prisma } from "@/lib/prisma";
 import { Translation } from "@/lib/types";
+import { STUDIO_CODE } from "@/lib/stringbag";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,6 +14,9 @@ function csvCell(v: string): string {
 export async function GET(req: Request, { params }: { params: { id: string } }) {
   const { searchParams } = new URL(req.url);
   const format = searchParams.get("format") ?? "csv";
+  const dialect = searchParams.get("dialect") ?? "iso"; // iso | studio
+  const cols = searchParams.get("cols") ?? "full"; // full | strings
+  const langCode = (l: string) => (dialect === "studio" ? STUDIO_CODE[l] ?? l : l);
 
   const project = await prisma.project.findUnique({ where: { id: params.id } });
   if (!project) return new Response("not found", { status: 404 });
@@ -25,18 +29,17 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   const speakerName: Record<string, string> = Object.fromEntries(speakers.map((s) => [s.id, s.name]));
 
   const langs = product.targetLangs;
-  const headers = [
-    "namespace",
-    "key",
-    "speaker",
-    "description",
-    "max_length",
-    `source(${product.sourceLang})`,
-  ];
-  for (const l of langs) headers.push(`${l}`, `${l}_status`);
+  const stringsOnly = cols === "strings";
+  const headers = stringsOnly
+    ? ["namespace", "key", `source(${langCode(product.sourceLang)})`, ...langs.map(langCode)]
+    : ["namespace", "key", "speaker", "description", "max_length", `source(${langCode(product.sourceLang)})`,
+       ...langs.flatMap((l) => [langCode(l), `${langCode(l)}_status`])];
 
   const rows = segments.map((s) => {
     const tr = (s.translations as unknown as Record<string, Translation>) ?? {};
+    if (stringsOnly) {
+      return [s.namespace ?? "", s.key, s.source, ...langs.map((l) => tr[l]?.text ?? "")];
+    }
     const row: string[] = [
       s.namespace ?? "",
       s.key,
@@ -45,9 +48,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
       s.maxLen != null ? String(s.maxLen) : "",
       s.source,
     ];
-    for (const l of langs) {
-      row.push(tr[l]?.text ?? "", tr[l]?.status ?? "untranslated");
-    }
+    for (const l of langs) row.push(tr[l]?.text ?? "", tr[l]?.status ?? "untranslated");
     return row;
   });
 

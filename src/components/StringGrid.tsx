@@ -70,6 +70,9 @@ export function StringGrid({
   const [drawerId, setDrawerId] = useState<string | null>(null);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [note, setNote] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
+  const PAGE_SIZE = 150;
+  const BULK_CAP = 200;
 
   // drawer-only state
   const [issues, setIssues] = useState<Issue[]>([]);
@@ -77,6 +80,8 @@ export function StringGrid({
   const [issueDraft, setIssueDraft] = useState<{ lang: string; severity: string; comment: string } | null>(null);
 
   const drawerSeg = rows.find((r) => r.id === drawerId) ?? null;
+
+  useEffect(() => { setPage(0); }, [search, statusFilter]);
 
   useEffect(() => {
     if (!drawerId) return;
@@ -100,6 +105,9 @@ export function StringGrid({
       return activeLangs.some((l) => s.translations[l]?.status === "in_review" || s.translations[l]?.status === "rejected");
     return true;
   });
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, pageCount - 1);
+  const paged = filtered.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE);
 
   // ---- mutations ----
   function patchCell(id: string, lang: string, patch: Partial<Translation>) {
@@ -266,7 +274,12 @@ export function StringGrid({
             </button>
           ))}
           <span className="mx-1 h-4 w-px bg-line" />
-          <button onClick={() => bulkTranslate("empty", filtered.map((s) => s.id))}
+          <button onClick={() => {
+              const ids = filtered.filter((s) => activeLangs.some((l) => !(s.translations[l]?.text ?? "").trim())).map((s) => s.id);
+              const capped = ids.slice(0, BULK_CAP);
+              if (ids.length > capped.length) setNote(`빈 셀 ${ids.length}건 중 상위 ${capped.length}건 번역 — 완료 후 반복 실행하세요`);
+              bulkTranslate("empty", capped);
+            }}
             className="rounded-lg bg-indigo px-3 py-1.5 text-[12.5px] font-semibold text-white hover:bg-indigo-deep">
             ✦ 빈 셀 번역
           </button>
@@ -280,6 +293,15 @@ export function StringGrid({
           <a href={`/api/projects/${project.id}/export?format=csv`} className="rounded-lg border border-line px-3 py-1.5 text-[12.5px] font-semibold text-muted hover:bg-line2">↧ CSV</a>
           <a href={`/api/projects/${project.id}/export?format=xlsx`} className="rounded-lg border border-line px-3 py-1.5 text-[12.5px] font-semibold text-muted hover:bg-line2">↧ XLSX</a>
           <Link href={`/products/${product.id}/import`} className="rounded-lg border border-line px-3 py-1.5 text-[12.5px] font-semibold text-muted hover:bg-line2">↥ 가져오기</Link>
+          <div className="ml-auto flex items-center gap-1.5">
+            <button onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={safePage === 0}
+              className="rounded-md border border-line px-2 py-1 text-[12px] font-semibold text-muted hover:bg-line2 disabled:opacity-40">‹</button>
+            <span className="tnums text-[11.5px] text-muted">
+              {filtered.length === 0 ? 0 : safePage * PAGE_SIZE + 1}–{Math.min((safePage + 1) * PAGE_SIZE, filtered.length)} / {filtered.length}
+            </span>
+            <button onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))} disabled={safePage >= pageCount - 1}
+              className="rounded-md border border-line px-2 py-1 text-[12px] font-semibold text-muted hover:bg-line2 disabled:opacity-40">›</button>
+          </div>
         </div>
         {progress && (
           <div className="mt-2">
@@ -311,7 +333,7 @@ export function StringGrid({
               </tr>
             </thead>
             <tbody>
-              {filtered.map((s) => {
+              {paged.map((s) => {
                 const sp = s.speakerId ? speakerById[s.speakerId] : undefined;
                 return (
                   <tr key={s.id} className={`group ${drawerId === s.id ? "bg-indigo-soft/40" : "hover:bg-panel2"}`}>

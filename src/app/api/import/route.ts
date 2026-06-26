@@ -4,24 +4,24 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { uid } from "@/lib/repo";
 import { Translation, SegmentStatus } from "@/lib/types";
+import { langMap } from "@/lib/config";
+import { detectSchema, findSourceCol, matrixFromRows, isMarkerOrEmptyKey } from "@/lib/stringbag";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 300;
+
+const MAX_ROWS = 20000;
 
 function parseCSV(text: string): string[][] {
-  const rows: string[][] = [];
-  let row: string[] = [];
-  let cur = "";
-  let inQ = false;
-  // strip UTF-8 BOM
   if (text.charCodeAt(0) === 0xfeff) text = text.slice(1);
+  const rows: string[][] = [];
+  let row: string[] = [], cur = "", inQ = false;
   for (let i = 0; i < text.length; i++) {
     const c = text[i];
     if (inQ) {
-      if (c === '"') {
-        if (text[i + 1] === '"') { cur += '"'; i++; }
-        else inQ = false;
-      } else cur += c;
+      if (c === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else inQ = false; }
+      else cur += c;
     } else {
       if (c === '"') inQ = true;
       else if (c === ",") { row.push(cur); cur = ""; }
@@ -31,7 +31,11 @@ function parseCSV(text: string): string[][] {
     }
   }
   if (cur.length > 0 || row.length > 0) { row.push(cur); rows.push(row); }
-  return rows.filter((r) => r.some((c) => c.trim() !== ""));
+  return rows;
+}
+
+function cleanNs(name: string): string {
+  return name.replace(/^[!#]+/, "").trim();
 }
 
 export async function POST(req: Request) {
@@ -41,120 +45,137 @@ export async function POST(req: Request) {
     const productId = String(form.get("productId") ?? "");
     let projectId = String(form.get("projectId") ?? "");
     const projectName = String(form.get("projectName") ?? "가져온 StringBag");
-    if (!file || !productId) {
-      return NextResponse.json({ error: "file and productId required" }, { status: 400 });
-    }
+    const autoAddLangs = String(form.get("autoAddLangs") ?? "true") !== "false";
+    if (!file || !productId) return NextResponse.json({ error: "file and productId required" }, { status: 400 });
+
     const product = await prisma.product.findUnique({ where: { id: productId } });
     if (!product) return NextResponse.json({ error: "product not found" }, { status: 404 });
 
-    let matrix: string[][] = [];
-    if (file.name.toLowerCase().endsWith(".xlsx")) {
+    // collect (sheetName, matrix) pairs
+    const sheets: { name: string; matrix: string[][] }[] = [];
+    const lower = file.name.toLowerCase();
+    if (lower.endsWith(".xlsx") || lower.endsWith(".xlsm")) {
       const wb = new ExcelJS.Workbook();
       await wb.xlsx.load(await file.arrayBuffer());
-      const ws = wb.worksheets[0];
-      ws.eachRow((r) => {
-        const vals = (r.values as unknown[]).slice(1).map((v) => (v == null ? "" : String(v)));
-        matrix.push(vals);
+      wb.worksheets.forEach((ws) => {
+        const rows: unknown[][] = [];
+        ws.eachRow({ includeEmpty: true }, (r) => {
+          const vals = (r.values as unknown[]).slice(1);
+          rows.push(vals);
+        });
+        sheets.push({ name: ws.name, matrix: matrixFromRows(rows) });
       });
     } else {
-      matrix = parseCSV(await file.text());
-    }
-    if (matrix.length < 2) return NextResponse.json({ error: "empty file (header + rows 필요)" }, { status: 400 });
-
-    const header = matrix[0].map((h) => h.trim().toLowerCase());
-    const findCol = (...names: string[]) =>
-      header.findIndex((h) => names.some((n) => h === n || h.startsWith(n)));
-    const keyCol = findCol("key", "stringbag", "id", "키");
-    const srcCol = findCol("source", "source(" + product.sourceLang + ")", "원문", "text", product.sourceLang);
-    const nsCol = findCol("namespace", "category", "네임스페이스");
-    const speakerCol = findCol("speaker", "character", "화자");
-    const sceneCol = findCol("scene", "씬");
-    const descCol = findCol("description", "context", "comment", "note", "설명");
-    const maxCol = findCol("maxlen", "max_length", "maxlength", "최대길이");
-    const langCols: Record<string, number> = {};
-    for (const l of product.targetLangs) {
-      const idx = header.findIndex((h) => h === l.toLowerCase());
-      if (idx >= 0) langCols[l] = idx;
-    }
-    if (srcCol < 0 && keyCol < 0) {
-      return NextResponse.json({ error: "source 또는 key 컬럼이 필요합니다" }, { status: 400 });
+      sheets.push({ name: "Sheet1", matrix: parseCSV(await file.text()) });
     }
 
-    // resolve project (create if not merging)
+    // detect schema per sheet & gather discovered languages
+    const parsed = sheets
+      .map((s) => ({ ...s, schema: detectSchema(s.matrix) }))
+      .filter((s) => s.schema) as { name: string; matrix: string[][]; schema: NonNullable<ReturnType<typeof detectSchema>> }[];
+
+    if (parsed.length === 0) {
+      return NextResponse.json({ error: "StringBag 스키마를 인식하지 못했습니다 (언어 컬럼/키 컬럼을 찾을 수 없음)" }, { status: 400 });
+    }
+
+    const discovered = new Set<string>();
+    for (const p of parsed) for (const iso of Object.keys(p.schema.langCols)) discovered.add(iso);
+
+    // auto-add valid discovered languages (catalog langs, not the source) to the product
+    let langsAdded: string[] = [];
+    if (autoAddLangs) {
+      const add = [...discovered].filter((l) => langMap[l] && l !== product.sourceLang && !product.targetLangs.includes(l));
+      if (add.length) {
+        const next = [...product.targetLangs, ...add];
+        await prisma.product.update({ where: { id: productId }, data: { targetLangs: next } });
+        product.targetLangs = next;
+        langsAdded = add;
+      }
+    }
+    const targetSet = new Set(product.targetLangs);
+
+    // resolve project
     const merge = !!projectId;
     if (!projectId) {
       const proj = await prisma.project.create({ data: { id: uid("proj"), productId, name: projectName } });
       projectId = proj.id;
     }
-
-    const speakers = await prisma.speaker.findMany({ where: { productId } });
-    const byName: Record<string, string> = Object.fromEntries(speakers.map((s) => [s.name.toLowerCase(), s.id]));
-    const existing = merge
-      ? await prisma.segment.findMany({ where: { projectId } })
-      : [];
-    const byKey: Record<string, (typeof existing)[number]> = Object.fromEntries(existing.map((s) => [s.key, s]));
+    const existing = merge ? await prisma.segment.findMany({ where: { projectId } }) : [];
+    const byKey = new Map(existing.map((s) => [s.key, s]));
 
     let order = await prisma.segment.count({ where: { projectId } });
-    let created = 0;
-    let updated = 0;
+    let created = 0, updated = 0, total = 0;
+    const toCreate: Prisma.SegmentUncheckedCreateInput[] = [];
 
-    const cell = (r: string[], i: number) => (i >= 0 ? (r[i] ?? "").trim() : "");
+    for (const sheet of parsed) {
+      const { matrix, schema } = sheet;
+      const ns = cleanNs(sheet.name);
+      const srcCol = findSourceCol(matrix, schema);
+      const langEntries = Object.entries(schema.langCols);
+      const firstLangCol = Math.min(...langEntries.map(([, c]) => c));
+      const sourceCol = srcCol >= 0 ? srcCol : (schema.langCols[product.sourceLang] ?? firstLangCol);
 
-    for (let i = 1; i < matrix.length; i++) {
-      const r = matrix[i];
-      const key = cell(r, keyCol);
-      const source = cell(r, srcCol) || key;
-      if (!key && !source) continue;
+      for (let r = schema.dataStart; r < matrix.length; r++) {
+        if (total >= MAX_ROWS) break;
+        const row = matrix[r];
+        if (!row) continue;
+        const key = (row[schema.keyCol] ?? "").trim();
+        if (isMarkerOrEmptyKey(key)) continue;
+        const source = (row[sourceCol] ?? "").trim();
 
-      const langTr: Record<string, Translation> = {};
-      for (const [l, idx] of Object.entries(langCols)) {
-        const text = (r[idx] ?? "").trim();
-        if (text) langTr[l] = { text, status: "translated" as SegmentStatus };
-      }
-      const speakerName = cell(r, speakerCol).toLowerCase();
-      const speakerId = speakerName && byName[speakerName] ? byName[speakerName] : null;
-      const maxLenRaw = cell(r, maxCol);
-      const maxLen = maxLenRaw && !isNaN(Number(maxLenRaw)) ? parseInt(maxLenRaw, 10) : null;
+        const translations: Record<string, Translation> = {};
+        for (const [iso, col] of langEntries) {
+          if (iso === product.sourceLang || col === sourceCol) continue;
+          if (!targetSet.has(iso)) continue;
+          const text = (row[col] ?? "").trim();
+          if (text) translations[iso] = { text, status: "translated" as SegmentStatus };
+        }
+        if (!source && Object.keys(translations).length === 0) continue;
+        total++;
 
-      const prior = key ? byKey[key] : undefined;
-      if (merge && prior) {
-        // merge translations (incoming overrides per-lang), keep others
-        const cur = { ...((prior.translations as unknown as Record<string, Translation>) ?? {}) };
-        for (const [l, t] of Object.entries(langTr)) cur[l] = t;
-        await prisma.segment.update({
-          where: { id: prior.id },
-          data: {
-            source,
-            namespace: cell(r, nsCol) || prior.namespace,
-            description: cell(r, descCol) || prior.description,
-            maxLen: maxLen ?? prior.maxLen,
-            speakerId: speakerId ?? prior.speakerId,
-            translations: cur as unknown as Prisma.InputJsonValue,
-          },
-        });
-        updated++;
-      } else {
-        await prisma.segment.create({
-          data: {
+        const prior = byKey.get(key);
+        if (merge && prior) {
+          const cur = { ...((prior.translations as unknown as Record<string, Translation>) ?? {}) };
+          for (const [l, t] of Object.entries(translations)) cur[l] = t;
+          await prisma.segment.update({
+            where: { id: prior.id },
+            data: { source: source || prior.source, namespace: ns || prior.namespace, translations: cur as unknown as Prisma.InputJsonValue },
+          });
+          updated++;
+        } else {
+          order++;
+          toCreate.push({
             id: uid("seg"),
             projectId,
-            key: key || `KEY_${String(order + 1).padStart(4, "0")}`,
-            namespace: cell(r, nsCol),
-            speakerId,
-            scene: cell(r, sceneCol),
-            description: cell(r, descCol) || null,
-            maxLen,
+            key,
+            namespace: ns,
+            speakerId: null,
+            scene: "",
             source,
-            translations: langTr as unknown as Prisma.InputJsonValue,
-            order: order + 1,
-          } as Prisma.SegmentUncheckedCreateInput,
-        });
-        order++;
-        created++;
+            translations: translations as unknown as Prisma.InputJsonValue,
+            order,
+          } as Prisma.SegmentUncheckedCreateInput);
+          created++;
+        }
       }
     }
 
-    return NextResponse.json({ ok: true, projectId, created, updated, merged: merge });
+    // batched insert
+    for (let i = 0; i < toCreate.length; i += 500) {
+      await prisma.segment.createMany({ data: toCreate.slice(i, i + 500) });
+    }
+
+    return NextResponse.json({
+      ok: true,
+      projectId,
+      created,
+      updated,
+      merged: merge,
+      langsAdded,
+      languages: [...discovered],
+      sheets: parsed.map((p) => p.name),
+      truncated: total >= MAX_ROWS,
+    });
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "import failed" }, { status: 500 });
   }
