@@ -18,10 +18,10 @@ export async function POST(req: Request) {
       targetLangs?: string[];
       mode?: "empty" | "all";
     };
-    if (!projectId || !Array.isArray(segmentIds) || segmentIds.length === 0) {
-      return NextResponse.json({ error: "projectId and segmentIds required" }, { status: 400 });
+    if (!projectId) {
+      return NextResponse.json({ error: "projectId required" }, { status: 400 });
     }
-    if (segmentIds.length > 40) {
+    if (Array.isArray(segmentIds) && segmentIds.length > 40) {
       return NextResponse.json({ error: "batch too large (max 40)" }, { status: 400 });
     }
 
@@ -37,7 +37,9 @@ export async function POST(req: Request) {
       prisma.speaker.findMany({ where: { productId: product.id } }),
       prisma.glossaryTerm.findMany({ where: { productId: product.id } }),
       prisma.contextNote.findMany({ where: { productId: product.id } }),
-      prisma.segment.findMany({ where: { id: { in: segmentIds }, projectId } }),
+      Array.isArray(segmentIds) && segmentIds.length
+        ? prisma.segment.findMany({ where: { id: { in: segmentIds }, projectId } })
+        : prisma.segment.findMany({ where: { projectId }, orderBy: { order: "asc" }, take: 40 }),
     ]);
     const speakerById = Object.fromEntries(speakers.map((s) => [s.id, s]));
     const contextById = Object.fromEntries(contexts.map((c) => [c.id, c]));
